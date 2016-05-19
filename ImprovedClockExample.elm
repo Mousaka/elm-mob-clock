@@ -4,7 +4,7 @@ import Html.App as Html
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
-
+import Update.Extra.Infix exposing ((:>))
 
 main: Program Never
 main =
@@ -29,7 +29,7 @@ type alias Model =
 
 init : (Model, Cmd Msg)
 init =
-  ({time = 5, subscribingToTime = False, finished = False}, Cmd.none)
+  ({time = 10, subscribingToTime = False, finished = False}, Cmd.none)
 
 
 -- UPDATE
@@ -48,7 +48,10 @@ update action model =
   case action of
     Tick _ ->
       case model.time of
-        0 -> update Finished model
+        0 ->
+          (model, Cmd.none)
+            :> update Finished
+            :> update Stop
         _ -> ({model | time = model.time - 1}, Cmd.none)
     Start ->
       ({model | subscribingToTime = True}, Cmd.none)
@@ -93,15 +96,17 @@ view model =
 
     minutesHandY =
       toString (50 + 30 * sin minutesAngle)
+
+    message = if model.finished then "Time is up!" else toString model.time
   in
     div [] [
     svg [ viewBox "0 0 100 100", width "300px" ]
         [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
         , line [ x1 "50", y1 "50", x2 minutesHandX, y2 minutesHandY, stroke "#000000" ] []
         , line [ x1 "50", y1 "50", x2 secondsHandX, y2 secondsHandY, stroke "#F0F8FF" ] []
-        ],
-        div [] [text (toString model.time)]
-        ,div [] [button [ onClick Start ] [ text "Start" ]
+        ]
+        , div [] [text message]
+        , div [] [button [ onClick Start ] [ text "Start" ]
               ,button [ onClick Stop ] [ text "Stop" ]
               ,button [ onClick Reset ] [ text "Reset timer" ]]
       ]
