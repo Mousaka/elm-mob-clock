@@ -1,17 +1,19 @@
-import Html exposing (Html, div, button)
+import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
 import Html.App as Html
+import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
 import Svg exposing (..)
+import String exposing (toFloat)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
-import Update.Extra.Infix exposing ((:>))
 
 main: Program Never
 main =
   Html.program
-    { init = init
+    { init = init ! []
     , view = view
-    , update = update
+      , update = (\a m-> update a m ! [])
     , subscriptions = subscriptions
     }
 
@@ -27,9 +29,9 @@ type alias Model =
   }
 
 
-init : (Model, Cmd Msg)
+init : Model
 init =
-  ({time = 10, subscribingToTime = False, finished = False}, Cmd.none)
+  {time = 10, subscribingToTime = False, finished = False}
 
 
 -- UPDATE
@@ -41,29 +43,31 @@ type Msg
   | Stop
   | Reset
   | Finished
-  | AddTime
+  | SetTimer String
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> Model
 update action model =
   case action of
     Tick _ ->
       case model.time of
         0 ->
-          (model, Cmd.none)
-            :> update Finished
-            :> update Stop
-        _ -> ({model | time = model.time - 1}, Cmd.none)
+          model |> update Finished |> update Stop
+        _ -> {model | time = model.time - 1}
     Start ->
-      ({model | subscribingToTime = True}, Cmd.none)
+      {model | subscribingToTime = True}
     Stop ->
-      ({model | subscribingToTime = False}, Cmd.none)
+      {model | subscribingToTime = False}
     Finished ->
-      ({model | finished = True}, Cmd.none)
+      {model | finished = True}
     Reset ->
       init
-    AddTime ->
-      ({model | time = model.time + 10}, Cmd.none)
+    SetTimer newTime ->
+      case String.toFloat newTime of
+        Ok timeValue ->
+          {model | time = (timeValue)}
+        Err message ->
+          model
 
 -- SUBSCRIPTIONS
 
@@ -89,7 +93,7 @@ view model =
         , div [] [text message]
         , div [] [button [ onClick Start ] [ text "Start" ]
               ,button [ onClick Stop ] [ text "Stop" ]
-              ,button [ onClick AddTime ] [ text "AddTime" ]
+              ,input [ placeholder "Text to reverse", onInput SetTimer, myStyle ] []
               ,button [ onClick Reset ] [ text "Reset timer" ]]
       ]
 
@@ -109,7 +113,7 @@ clock time =
       minutesHandlerTip =
         (50 + 30 * cos minutesAngle, 50 + 30 * sin minutesAngle)
     in
-      svg [ viewBox "0 0 100 100", width "300px" ]
+      svg [ viewBox "0 0 100 100", Svg.Attributes.width "300px" ]
           [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
           , clockHandle minutesHandlerTip "#000000"
           , clockHandle secondHandlerTip "#F0F8FF"
@@ -123,3 +127,13 @@ clockHandle coords colour =
 angleHelper : Float -> Float -> Float
 angleHelper speed seconds =
   pi * 2 * (seconds / speed) - pi / 2
+
+myStyle : Html.Attribute a
+myStyle =
+  Html.Attributes.style
+    [ ("width", "100%")
+    , ("height", "40px")
+    , ("padding", "10px 0")
+    , ("font-size", "2em")
+    , ("text-align", "center")
+    ]
