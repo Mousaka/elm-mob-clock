@@ -24,14 +24,37 @@ main =
 
 type alias Model =
   {time : Float
+  ,lastActivated : Float
+  ,lastInput : Float
   ,subscribingToTime : Bool
   ,finished : Bool
   }
 
+type alias ResetTime on =
+  {on
+  |lastActivated : Float
+  ,lastInput : Float
+  }
 
 init : Model
 init =
-  {time = 10, subscribingToTime = False, finished = False}
+  {time = 60*10, lastActivated = 60*10, lastInput = 60*10, subscribingToTime = False, finished = False}
+
+type ParsedTime
+  = Unparsable
+  | ParsedValue Float
+
+
+-- UTIL
+
+
+timeParser : String -> ParsedTime
+timeParser timeToParse =
+  case String.toFloat timeToParse of
+    Ok timeValue ->
+      ParsedValue timeValue
+    Err _ ->
+      Unparsable
 
 
 -- UPDATE
@@ -55,18 +78,18 @@ update action model =
           model |> update Finished |> update Stop
         _ -> {model | time = model.time - 1}
     Start ->
-      {model | subscribingToTime = True}
+      {model | subscribingToTime = True, finished = False}
     Stop ->
       {model | subscribingToTime = False}
     Finished ->
       {model | finished = True}
     Reset ->
-      init
+      {model | time = model.lastInput}
     SetTimer newTime ->
-      case String.toFloat newTime of
-        Ok timeValue ->
-          {model | time = (timeValue)}
-        Err message ->
+      case timeParser newTime of
+        ParsedValue timeValue ->
+          {model | lastInput = timeValue}
+        Unparsable ->
           model
 
 -- SUBSCRIPTIONS
@@ -93,7 +116,7 @@ view model =
         , div [] [text message]
         , div [] [button [ onClick Start ] [ text "Start" ]
               ,button [ onClick Stop ] [ text "Stop" ]
-              ,input [ placeholder "Text to reverse", onInput SetTimer, myStyle ] []
+              ,input [ placeholder "Set stop watch", onInput SetTimer, myStyle ] []
               ,button [ onClick Reset ] [ text "Reset timer" ]]
       ]
 
