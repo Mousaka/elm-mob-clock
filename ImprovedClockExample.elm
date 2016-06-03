@@ -4,7 +4,7 @@ import Html.App as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import Svg exposing (..)
-import String exposing (toFloat)
+import String exposing (toFloat, slice, right)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 
@@ -47,9 +47,23 @@ type ParsedTime
 
 -- UTIL
 
+toMinSec : String -> ParsedTime
+toMinSec textTime =
+  let
+    mins = slice -4 -2 textTime
+    sec = right 2 textTime
+    minSec = (toParsedTime mins, toParsedTime sec)
+  in
+  case minSec of
+    (Unparsable, ParsedValue seconds) ->
+      ParsedValue seconds
+    (ParsedValue minutes, ParsedValue seconds) ->
+      ParsedValue (60 * minutes + seconds)
+    _ -> Unparsable
 
-timeParser : String -> ParsedTime
-timeParser timeToParse =
+
+toParsedTime : String -> ParsedTime
+toParsedTime timeToParse =
   case String.toFloat timeToParse of
     Ok timeValue ->
       ParsedValue timeValue
@@ -86,7 +100,7 @@ update action model =
     Reset ->
       {model | time = model.lastInput}
     SetTimer newTime ->
-      case timeParser newTime of
+      case toMinSec newTime of
         ParsedValue timeValue ->
           {model | lastInput = timeValue}
         Unparsable ->
@@ -114,6 +128,7 @@ view model =
     div [] [
         clock model.time
         , div [] [text message]
+        , div [] [text (toString model.lastInput)]
         , div [] [button [ onClick Start ] [ text "Start" ]
               ,button [ onClick Stop ] [ text "Stop" ]
               ,input [ placeholder "Set stop watch", onInput SetTimer, myStyle ] []
