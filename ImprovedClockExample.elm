@@ -4,7 +4,7 @@ import Html.App as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import Svg exposing (..)
-import String exposing (toFloat, slice, right)
+import String exposing (toFloat, slice, right, length)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 
@@ -18,34 +18,31 @@ main =
     }
 
 
-
 -- MODEL
-
+type ClockState
+  = Stopped
+  | Running
+  | Paused
+  | Finished
 
 type alias Model =
-  {time : Float
-  ,lastActivated : Float
-  ,lastInput : Float
-  ,subscribingToTime : Bool
+  {time : Int
+  ,resetTime : Int
+  ,clockState : ClockState
   ,finished : Bool
-  }
-
-type alias ResetTime on =
-  {on
-  |lastActivated : Float
-  ,lastInput : Float
   }
 
 init : Model
 init =
-  {time = 60*10, lastActivated = 60*10, lastInput = 60*10, subscribingToTime = False, finished = False}
-
-type ParsedTime
-  = Unparsable
-  | ParsedValue Float
+  {time = 60*10, resetTime = 60*10, clockState = Stopped, finished = False}
 
 
 -- UTIL
+
+type ParsedTime
+  = Unparsable
+  | ParsedValue Int
+
 
 toMinSec : String -> ParsedTime
 toMinSec textTime =
@@ -64,7 +61,7 @@ toMinSec textTime =
 
 toParsedTime : String -> ParsedTime
 toParsedTime timeToParse =
-  case String.toFloat timeToParse of
+  case String.toInt timeToParse of
     Ok timeValue ->
       ParsedValue timeValue
     Err _ ->
@@ -77,9 +74,10 @@ toParsedTime timeToParse =
 type Msg
   = Tick Time
   | Start
-  | Stop
   | Reset
-  | Finished
+  | Pause
+  | Unpause
+  | Finish
   | SetTimer String
 
 
@@ -89,20 +87,22 @@ update action model =
     Tick _ ->
       case model.time of
         0 ->
-          model |> update Finished |> update Stop
+          model |> update Finish
         _ -> {model | time = model.time - 1}
     Start ->
-      {model | subscribingToTime = True, finished = False}
-    Stop ->
-      {model | subscribingToTime = False}
-    Finished ->
-      {model | finished = True}
+      {model | clockState = Running, finished = False}
     Reset ->
-      {model | time = model.lastInput}
+      {model | clockState = Stopped, time = model.resetTime}
+    Pause ->
+      {model | clockState = Paused}
+    Unpause ->
+      {model | clockState = Running}
+    Finish ->
+      {model | clockState = Finished}
     SetTimer newTime ->
       case toMinSec newTime of
         ParsedValue timeValue ->
-          {model | lastInput = timeValue}
+          {model | resetTime = timeValue, time = timeValue}
         Unparsable ->
           model
 
@@ -111,31 +111,102 @@ update action model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  if model.subscribingToTime then
-    Time.every second Tick
-  else
-    Sub.none
+  case model.clockState of
+    Running ->
+      Time.every second Tick
+    _ ->
+       Sub.none
+
 
 
 -- VIEW
 
+displayMin : Int -> Int
+displayMin t = t // 60
+
+displaySec : Int -> Int
+displaySec t = t % 60
+
+displayTime : Int -> String
+displayTime time =
+  let generalTimeDisplay = displayUnitsOfTime time in
+  generalTimeDisplay displayMin ++ ":" ++ generalTimeDisplay displaySec
+
+
+displayUnitsOfTime : Int -> (Int -> Int) -> String
+displayUnitsOfTime time unitFunc =
+  let unitsToDisplay = unitFunc time |> toString in
+  case (length unitsToDisplay) of
+    1 -> "0" ++ unitsToDisplay
+    _ -> unitsToDisplay
 
 view : Model -> Html Msg
 view model =
   let
-    message = if model.finished then "Time is up!" else toString model.time
+    message = statusText model.clockState
+    timeField =  inputOrDisplayTime model.clockState <| displayTime model.time
+    startPauseResumeButton = startPauseResumeB model.clockState
+    resetButton = resetB model.clockState
   in
     div [] [
         clock model.time
         , div [] [text message]
-        , div [] [text (toString model.lastInput)]
-        , div [] [button [ onClick Start ] [ text "Start" ]
-              ,button [ onClick Stop ] [ text "Stop" ]
-              ,input [ placeholder "Set stop watch", onInput SetTimer, myStyle ] []
-              ,button [ onClick Reset ] [ text "Reset timer" ]]
+        , div [] [
+              timeField
+              ,startPauseResumeButton
+              ,resetButton
+              ]
       ]
 
-clock : Float -> Html Msg
+resetB : ClockState -> Html Msg
+resetB clockState =
+  case clockState of
+    Paused ->
+      button [ onClick Reset ] [ text "Reset" ]
+    Finished ->
+      button [ onClick Reset ] [ text "Reset" ]
+    _ ->
+      button [ onClick Reset, hidden True ] [ text "Reset" ]
+
+statusText : ClockState -> String
+statusText clockState =
+  case clockState of
+    Finished ->
+      "Time is up!"
+    _ ->
+      ""
+
+startPauseResumeB : ClockState -> Html Msg
+startPauseResumeB clockState =
+  case clockState of
+    Paused ->
+      button [ onClick Unpause ] [ text "Resume" ]
+    Running ->
+      button [ onClick Pause ] [ text "Pause" ]
+    Finished ->
+      button [ hidden True ] []
+    _ ->
+      button [ onClick Start ] [ text "Start" ]
+
+inputOrDisplayTime : ClockState -> (String -> Html Msg)
+inputOrDisplayTime clockState =
+  case clockState of
+    Paused ->
+      displayTimer
+    Running ->
+      displayTimer
+    _ ->
+      timerInput
+
+timerInput : String -> Html Msg
+timerInput currentTime =
+  input [ placeholder currentTime, onInput SetTimer, myStyle ] []
+
+displayTimer : String -> Html Msg
+displayTimer displayableTime =
+  div [myStyle ] [text displayableTime]
+
+clock : Int -> Html Msg
 clock time =
     let
       secondsAngle =
@@ -162,9 +233,9 @@ clockHandle coords colour =
   let (x, y) = coords in
     line [ x1 "50", y1 "50", x2 (toString x), y2 (toString y), stroke colour ] []
 
-angleHelper : Float -> Float -> Float
+angleHelper : Float -> Int -> Float
 angleHelper speed seconds =
-  pi * 2 * (seconds / speed) - pi / 2
+  pi * 2 * (Basics.toFloat seconds / speed) - pi / 2
 
 myStyle : Html.Attribute a
 myStyle =
