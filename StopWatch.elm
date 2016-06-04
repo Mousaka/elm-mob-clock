@@ -148,7 +148,7 @@ view model =
     startPauseResumeButton = startPauseResumeB model.clockState
     resetButton = resetB model.clockState
   in
-    div [] [
+    div [Html.Attributes.style [("text-align", "center")]] [
         clock model.time
         , div [] [text message]
         , div [] [
