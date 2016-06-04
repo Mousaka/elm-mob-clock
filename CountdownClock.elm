@@ -13,7 +13,7 @@ main =
   Html.program
     { init = init ! []
     , view = view
-      , update = (\a m-> update a m ! [])
+    , update = (\a m-> update a m ! [])
     , subscriptions = subscriptions
     }
 
@@ -29,13 +29,54 @@ type alias Model =
   {time : Int
   ,resetTime : Int
   ,clockState : ClockState
-  ,finished : Bool
   }
 
 init : Model
 init =
-  {time = 60*10, resetTime = 60*10, clockState = Stopped, finished = False}
+  {time = 60*10
+  ,resetTime = 60*10
+  ,clockState = Stopped
+  }
 
+
+
+-- UPDATE
+
+
+type Msg
+  = Tick Time
+  | Start
+  | Reset
+  | Pause
+  | Unpause
+  | Finish
+  | SetTimer String
+
+
+update : Msg -> Model -> Model
+update action model =
+  case action of
+    Tick _ ->
+      case model.time of
+        0 ->
+          model |> update Finish
+        _ -> {model | time = model.time - 1}
+    Start ->
+      {model | clockState = Running}
+    Reset ->
+      {model | clockState = Stopped, time = model.resetTime}
+    Pause ->
+      {model | clockState = Paused}
+    Unpause ->
+      {model | clockState = Running}
+    Finish ->
+      {model | clockState = Finished}
+    SetTimer newTime ->
+      case toMinSec newTime of
+        ParsedValue timeValue ->
+          {model | resetTime = timeValue, time = timeValue}
+        Unparsable ->
+          model
 
 -- UTIL
 
@@ -67,44 +108,6 @@ toParsedTime timeToParse =
     Err _ ->
       Unparsable
 
-
--- UPDATE
-
-
-type Msg
-  = Tick Time
-  | Start
-  | Reset
-  | Pause
-  | Unpause
-  | Finish
-  | SetTimer String
-
-
-update : Msg -> Model -> Model
-update action model =
-  case action of
-    Tick _ ->
-      case model.time of
-        0 ->
-          model |> update Finish
-        _ -> {model | time = model.time - 1}
-    Start ->
-      {model | clockState = Running, finished = False}
-    Reset ->
-      {model | clockState = Stopped, time = model.resetTime}
-    Pause ->
-      {model | clockState = Paused}
-    Unpause ->
-      {model | clockState = Running}
-    Finish ->
-      {model | clockState = Finished}
-    SetTimer newTime ->
-      case toMinSec newTime of
-        ParsedValue timeValue ->
-          {model | resetTime = timeValue, time = timeValue}
-        Unparsable ->
-          model
 
 -- SUBSCRIPTIONS
 
@@ -148,25 +151,13 @@ view model =
     startPauseResumeButton = startPauseResumeB model.clockState
     resetButton = resetB model.clockState
   in
-    div [Html.Attributes.style [("text-align", "center")]] [
-        clock model.time
-        , div [] [text message]
-        , div [] [
-              timeField
-              ,startPauseResumeButton
-              ,resetButton
-              ]
+    div [] [
+         div [flexMiddle] [clock model.time]
+        ,div [] [text message]
+        ,div [flexMiddle] [timeField]
+        ,div [flexMiddle][startPauseResumeButton ,resetButton]
       ]
 
-resetB : ClockState -> Html Msg
-resetB clockState =
-  case clockState of
-    Paused ->
-      button [ onClick Reset ] [ text "Reset" ]
-    Finished ->
-      button [ onClick Reset ] [ text "Reset" ]
-    _ ->
-      button [ onClick Reset, hidden True ] [ text "Reset" ]
 
 statusText : ClockState -> String
 statusText clockState =
@@ -176,17 +167,29 @@ statusText clockState =
     _ ->
       ""
 
+
+resetB : ClockState -> Html Msg
+resetB clockState =
+  case clockState of
+    Paused ->
+      button [ onClick Reset, myButton ] [ text "Reset" ]
+    Finished ->
+      button [ onClick Reset, myButton ] [ text "Reset" ]
+    _ ->
+      button [ onClick Reset, hidden True, myButton ] [ text "Reset" ]
+
+
 startPauseResumeB : ClockState -> Html Msg
 startPauseResumeB clockState =
   case clockState of
     Paused ->
-      button [ onClick Unpause ] [ text "Resume" ]
+      button [ onClick Unpause, myButton ] [ text "Resume" ]
     Running ->
-      button [ onClick Pause ] [ text "Pause" ]
+      button [ onClick Pause, myButton ] [ text "Pause" ]
     Finished ->
-      button [ hidden True ] []
+      button [ hidden True, myButton ] []
     _ ->
-      button [ onClick Start ] [ text "Start" ]
+      button [ onClick Start, myButton ] [ text "Start" ]
 
 inputOrDisplayTime : ClockState -> (String -> Html Msg)
 inputOrDisplayTime clockState =
@@ -204,7 +207,7 @@ timerInput currentTime =
 
 displayTimer : String -> Html Msg
 displayTimer displayableTime =
-  div [myStyle ] [text displayableTime]
+  div [ myStyle ] [text displayableTime]
 
 clock : Int -> Html Msg
 clock time =
@@ -237,12 +240,33 @@ angleHelper : Float -> Int -> Float
 angleHelper speed seconds =
   pi * 2 * (Basics.toFloat seconds / speed) - pi / 2
 
-myStyle : Html.Attribute a
+-- STYLE
+
+myStyle : Html.Attribute Msg
 myStyle =
   Html.Attributes.style
-    [ ("width", "100%")
-    , ("height", "40px")
+    [ ("width", "170px")
+    , ("height", "30px")
     , ("padding", "10px 0")
     , ("font-size", "2em")
+    , ("font-family", "Arial")
+    , ("text-align", "center")
+    ]
+
+flexMiddle : Html.Attribute Msg
+flexMiddle =
+  Html.Attributes.style
+  [ ("display", "flex")
+  , ("justify-content","center")]
+
+myButton : Html.Attribute Msg
+myButton =
+  Html.Attributes.style
+    [ ("margin", "5px")
+    , ("border", "1px solid #0B79CE")
+    , ("background", "#0B79CE")
+    , ("color", "#fff")
+    , ("height", "30px")
+    , ("width", "60px")
     , ("text-align", "center")
     ]
