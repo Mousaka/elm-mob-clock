@@ -1,3 +1,5 @@
+import Styling exposing (..)
+import Util exposing (toMinSec)
 import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
 import Html.App as Html
@@ -19,6 +21,8 @@ main =
 
 
 -- MODEL
+
+
 type ClockState
   = Stopped
   | Running
@@ -39,8 +43,7 @@ init =
   }
 
 
-
--- UPDATE
+-- Messages
 
 
 type Msg
@@ -51,6 +54,9 @@ type Msg
   | Unpause
   | Finish
   | SetTimer String
+
+
+-- UPDATE
 
 
 update : Msg -> Model -> Model
@@ -73,40 +79,11 @@ update action model =
       {model | clockState = Finished}
     SetTimer newTime ->
       case toMinSec newTime of
-        ParsedValue timeValue ->
+        Just timeValue ->
           {model | resetTime = timeValue, time = timeValue}
-        Unparsable ->
+        Nothing ->
           model
 
--- UTIL
-
-type ParsedTime
-  = Unparsable
-  | ParsedValue Int
-
-
-toMinSec : String -> ParsedTime
-toMinSec textTime =
-  let
-    mins = slice -4 -2 textTime
-    sec = right 2 textTime
-    minSec = (toParsedTime mins, toParsedTime sec)
-  in
-  case minSec of
-    (Unparsable, ParsedValue seconds) ->
-      ParsedValue seconds
-    (ParsedValue minutes, ParsedValue seconds) ->
-      ParsedValue (60 * minutes + seconds)
-    _ -> Unparsable
-
-
-toParsedTime : String -> ParsedTime
-toParsedTime timeToParse =
-  case String.toInt timeToParse of
-    Ok timeValue ->
-      ParsedValue timeValue
-    Err _ ->
-      Unparsable
 
 
 -- SUBSCRIPTIONS
@@ -119,7 +96,6 @@ subscriptions model =
       Time.every second Tick
     _ ->
        Sub.none
-
 
 
 -- VIEW
@@ -191,6 +167,7 @@ startPauseResumeB clockState =
     _ ->
       button [ onClick Start, myButton ] [ text "Start" ]
 
+
 inputOrDisplayTime : ClockState -> (String -> Html Msg)
 inputOrDisplayTime clockState =
   case clockState of
@@ -201,13 +178,16 @@ inputOrDisplayTime clockState =
     _ ->
       timerInput
 
+
 timerInput : String -> Html Msg
 timerInput currentTime =
   input [ placeholder currentTime, onInput SetTimer, myStyle ] []
 
+
 displayTimer : String -> Html Msg
 displayTimer displayableTime =
   div [ myStyle ] [text displayableTime]
+
 
 clock : Int -> Html Msg
 clock time =
@@ -223,7 +203,7 @@ clock time =
         (50 + 40 * cos secondsAngle, 50 + 40 * sin secondsAngle)
 
       minutesHandlerTip =
-        (50 + 30 * cos minutesAngle, 50 + 30 * sin minutesAngle)
+        (50 + 38 * cos minutesAngle, 50 + 38 * sin minutesAngle)
     in
       svg [ viewBox "0 0 100 100", Svg.Attributes.width "300px" ]
           [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
@@ -236,37 +216,7 @@ clockHandle coords colour =
   let (x, y) = coords in
     line [ x1 "50", y1 "50", x2 (toString x), y2 (toString y), stroke colour ] []
 
+
 angleHelper : Float -> Int -> Float
 angleHelper speed seconds =
   pi * 2 * (Basics.toFloat seconds / speed) - pi / 2
-
--- STYLE
-
-myStyle : Html.Attribute Msg
-myStyle =
-  Html.Attributes.style
-    [ ("width", "170px")
-    , ("height", "30px")
-    , ("padding", "10px 0")
-    , ("font-size", "2em")
-    , ("font-family", "Arial")
-    , ("text-align", "center")
-    ]
-
-flexMiddle : Html.Attribute Msg
-flexMiddle =
-  Html.Attributes.style
-  [ ("display", "flex")
-  , ("justify-content","center")]
-
-myButton : Html.Attribute Msg
-myButton =
-  Html.Attributes.style
-    [ ("margin", "5px")
-    , ("border", "1px solid #0B79CE")
-    , ("background", "#0B79CE")
-    , ("color", "#fff")
-    , ("height", "30px")
-    , ("width", "60px")
-    , ("text-align", "center")
-    ]
