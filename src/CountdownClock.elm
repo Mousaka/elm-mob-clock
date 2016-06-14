@@ -1,3 +1,4 @@
+port module CountdownClock exposing (..)
 import Styling exposing (..)
 import Util exposing (toMinSec)
 import Html exposing (Html, div, button, input, Attribute)
@@ -15,7 +16,7 @@ main =
   Html.program
     { init = init ! []
     , view = view
-    , update = (\a m-> update a m ! [])
+    , update = update
     , subscriptions = subscriptions
     }
 
@@ -59,30 +60,31 @@ type Msg
 -- UPDATE
 
 
-update : Msg -> Model -> Model
-update action model =
-  case action of
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+  case msg of
     Tick _ ->
-      case model.time of
-        0 ->
-          model |> update Finish
-        _ -> {model | time = model.time - 1}
+      case model.time < 1 of
+        True ->
+          update Finish model
+        _ ->
+          ({model | time = model.time - 1}, Cmd.none)
     Start ->
-      {model | clockState = Running}
+      ({model | clockState = Running}, Cmd.none)
     Reset ->
-      {model | clockState = Stopped, time = model.resetTime}
+      ({model | clockState = Stopped, time = model.resetTime}, Cmd.none)
     Pause ->
-      {model | clockState = Paused}
+      ({model | clockState = Paused}, Cmd.none)
     Unpause ->
-      {model | clockState = Running}
+      ({model | clockState = Running}, Cmd.none)
     Finish ->
-      {model | clockState = Finished}
+      ({model | clockState = Finished}, alarm())
     SetTimer newTime ->
       case toMinSec newTime of
         Just timeValue ->
-          {model | resetTime = timeValue, time = timeValue}
+          ({model | resetTime = timeValue, time = timeValue}, Cmd.none)
         Nothing ->
-          model
+          (model, Cmd.none)
 
 
 
@@ -97,6 +99,7 @@ subscriptions model =
     _ ->
        Sub.none
 
+port alarm : () -> Cmd msg
 
 -- VIEW
 
