@@ -8434,7 +8434,7 @@ var _user$project$CountdownClock$view = function (model) {
 				A2(
 				_elm_lang$html$Html$div,
 				_elm_lang$core$Native_List.fromArray(
-					[]),
+					[_user$project$Styling$flexMiddle]),
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$svg$Svg$text(message)

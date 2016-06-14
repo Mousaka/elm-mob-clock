@@ -131,11 +131,11 @@ view model =
     resetButton = resetB model.clockState
   in
     div [] [
-         div [flexMiddle] [clock model.time]
-        ,div [] [text message]
-        ,div [flexMiddle] [timeField]
-        ,div [flexMiddle][startPauseResumeButton ,resetButton]
-      ]
+           div [flexMiddle] [clock model.time]
+          ,div [flexMiddle] [text message]
+          ,div [flexMiddle] [timeField]
+          ,div [flexMiddle] [startPauseResumeButton ,resetButton]
+          ]
 
 
 statusText : ClockState -> String
