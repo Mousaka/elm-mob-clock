@@ -8230,6 +8230,7 @@ var _user$project$CountdownClock$inputOrDisplayTime = function (clockState) {
 			return _user$project$CountdownClock$timerInput;
 	}
 };
+var _user$project$CountdownClock$SoundAlarm = {ctor: 'SoundAlarm'};
 var _user$project$CountdownClock$Finish = {ctor: 'Finish'};
 var _user$project$CountdownClock$update = F2(
 	function (msg, model) {
@@ -8238,21 +8239,30 @@ var _user$project$CountdownClock$update = F2(
 			var _p4 = msg;
 			switch (_p4.ctor) {
 				case 'Tick':
-					var _p5 = _elm_lang$core$Native_Utils.cmp(model.time, 1) < 0;
-					if (_p5 === true) {
-						var _v5 = _user$project$CountdownClock$Finish,
-							_v6 = model;
-						msg = _v5;
-						model = _v6;
-						continue update;
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
+					var _p5 = model.time;
+					switch (_p5) {
+						case 1:
+							var _v5 = _user$project$CountdownClock$SoundAlarm,
+								_v6 = _elm_lang$core$Native_Utils.update(
 								model,
-								{time: model.time - 1}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
+								{time: model.time - 1});
+							msg = _v5;
+							model = _v6;
+							continue update;
+						case 0:
+							var _v7 = _user$project$CountdownClock$Finish,
+								_v8 = model;
+							msg = _v7;
+							model = _v8;
+							continue update;
+						default:
+							return {
+								ctor: '_Tuple2',
+								_0: _elm_lang$core$Native_Utils.update(
+									model,
+									{time: model.time - 1}),
+								_1: _elm_lang$core$Platform_Cmd$none
+							};
 					}
 				case 'Start':
 					return {
@@ -8292,6 +8302,12 @@ var _user$project$CountdownClock$update = F2(
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{clockState: _user$project$CountdownClock$Finished}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'SoundAlarm':
+					return {
+						ctor: '_Tuple2',
+						_0: model,
 						_1: _user$project$CountdownClock$alarm(
 							{ctor: '_Tuple0'})
 					};

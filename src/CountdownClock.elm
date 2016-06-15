@@ -54,6 +54,7 @@ type Msg
   | Pause
   | Unpause
   | Finish
+  | SoundAlarm
   | SetTimer String
 
 
@@ -64,8 +65,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Tick _ ->
-      case model.time < 1 of
-        True ->
+      case model.time of
+        1 ->
+          update SoundAlarm ({model | time = model.time - 1})
+        0 ->
           update Finish model
         _ ->
           ({model | time = model.time - 1}, Cmd.none)
@@ -78,7 +81,9 @@ update msg model =
     Unpause ->
       ({model | clockState = Running}, Cmd.none)
     Finish ->
-      ({model | clockState = Finished}, alarm())
+      ({model | clockState = Finished}, Cmd.none)
+    SoundAlarm ->
+      (model, alarm ())
     SetTimer newTime ->
       case toMinSec newTime of
         Just timeValue ->
