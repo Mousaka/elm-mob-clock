@@ -92,7 +92,6 @@ update msg model =
           (model, Cmd.none)
 
 
-
 -- SUBSCRIPTIONS
 
 
@@ -104,25 +103,29 @@ subscriptions model =
     _ ->
        Sub.none
 
+
+-- ports
+
 port alarm : () -> Cmd msg
 
 -- VIEW
 
-displayMin : Int -> Int
-displayMin t = t // 60
+displayMin : Int -> String
+displayMin t =
+  displayUnitsOfTime (t // 60)
 
-displaySec : Int -> Int
-displaySec t = t % 60
+displaySec : Int -> String
+displaySec t =
+  displayUnitsOfTime (t % 60)
 
 displayTime : Int -> String
 displayTime time =
-  let generalTimeDisplay = displayUnitsOfTime time in
-  generalTimeDisplay displayMin ++ ":" ++ generalTimeDisplay displaySec
+  displayMin time ++ ":" ++ (displaySec time)
 
 
-displayUnitsOfTime : Int -> (Int -> Int) -> String
-displayUnitsOfTime time unitFunc =
-  let unitsToDisplay = unitFunc time |> toString in
+displayUnitsOfTime : Int -> String
+displayUnitsOfTime time =
+  let unitsToDisplay = toString time in
   case (length unitsToDisplay) of
     1 -> "0" ++ unitsToDisplay
     _ -> unitsToDisplay

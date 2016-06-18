@@ -8163,32 +8163,30 @@ var _user$project$CountdownClock$statusText = function (clockState) {
 		return '';
 	}
 };
-var _user$project$CountdownClock$displayUnitsOfTime = F2(
-	function (time, unitFunc) {
-		var unitsToDisplay = _elm_lang$core$Basics$toString(
-			unitFunc(time));
-		var _p2 = _elm_lang$core$String$length(unitsToDisplay);
-		if (_p2 === 1) {
-			return A2(_elm_lang$core$Basics_ops['++'], '0', unitsToDisplay);
-		} else {
-			return unitsToDisplay;
-		}
-	});
+var _user$project$CountdownClock$displayUnitsOfTime = function (time) {
+	var unitsToDisplay = _elm_lang$core$Basics$toString(time);
+	var _p2 = _elm_lang$core$String$length(unitsToDisplay);
+	if (_p2 === 1) {
+		return A2(_elm_lang$core$Basics_ops['++'], '0', unitsToDisplay);
+	} else {
+		return unitsToDisplay;
+	}
+};
 var _user$project$CountdownClock$displaySec = function (t) {
-	return A2(_elm_lang$core$Basics_ops['%'], t, 60);
+	return _user$project$CountdownClock$displayUnitsOfTime(
+		A2(_elm_lang$core$Basics_ops['%'], t, 60));
 };
 var _user$project$CountdownClock$displayMin = function (t) {
-	return (t / 60) | 0;
+	return _user$project$CountdownClock$displayUnitsOfTime((t / 60) | 0);
 };
 var _user$project$CountdownClock$displayTime = function (time) {
-	var generalTimeDisplay = _user$project$CountdownClock$displayUnitsOfTime(time);
 	return A2(
 		_elm_lang$core$Basics_ops['++'],
-		generalTimeDisplay(_user$project$CountdownClock$displayMin),
+		_user$project$CountdownClock$displayMin(time),
 		A2(
 			_elm_lang$core$Basics_ops['++'],
 			':',
-			generalTimeDisplay(_user$project$CountdownClock$displaySec)));
+			_user$project$CountdownClock$displaySec(time)));
 };
 var _user$project$CountdownClock$alarm = _elm_lang$core$Native_Platform.outgoingPort(
 	'alarm',
