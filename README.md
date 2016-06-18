@@ -1,7 +1,9 @@
 # elm-clock-countdown
 A clock that counts down to zero.
 
-Based on this example program: http://elm-lang.org/examples/time
+Try it out here http://mousaka.github.io/elm-clock-countdown/
+
+Clock animation based on this example program: http://elm-lang.org/examples/time
 
 To run:
 
@@ -12,3 +14,4 @@ To build:
 * `npm install elm`
 * `elm-package install`
 * `elm make src/CountdownClock.elm --output=count-down-clock.js`
+
