@@ -8492,9 +8492,62 @@ var _user$project$CountdownClock$main = {
 		})
 };
 
+var _user$project$Main$init = {
+	ctor: '_Tuple2',
+	_0: {countdownClock: _user$project$CountdownClock$init},
+	_1: _elm_lang$core$Platform_Cmd$none
+};
+var _user$project$Main$Model = function (a) {
+	return {countdownClock: a};
+};
+var _user$project$Main$Clock = function (a) {
+	return {ctor: 'Clock', _0: a};
+};
+var _user$project$Main$update = F2(
+	function (message, model) {
+		var _p0 = message;
+		var _p1 = A2(_user$project$CountdownClock$update, _p0._0, model.countdownClock);
+		var newClockState = _p1._0;
+		var clockCmds = _p1._1;
+		return {
+			ctor: '_Tuple2',
+			_0: _elm_lang$core$Native_Utils.update(
+				model,
+				{countdownClock: newClockState}),
+			_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
+		};
+	});
+var _user$project$Main$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$core$Platform_Sub$map,
+				_user$project$Main$Clock,
+				_user$project$CountdownClock$subscriptions(model.countdownClock))
+			]));
+};
+var _user$project$Main$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$Clock,
+				_user$project$CountdownClock$view(model.countdownClock))
+			]));
+};
+var _user$project$Main$main = {
+	main: _elm_lang$html$Html_App$program(
+		{init: _user$project$Main$init, update: _user$project$Main$update, view: _user$project$Main$view, subscriptions: _user$project$Main$subscriptions})
+};
+
 var Elm = {};
-Elm['CountdownClock'] = Elm['CountdownClock'] || {};
-_elm_lang$core$Native_Platform.addPublicModule(Elm['CountdownClock'], 'CountdownClock', typeof _user$project$CountdownClock$main === 'undefined' ? null : _user$project$CountdownClock$main);
+Elm['Main'] = Elm['Main'] || {};
+_elm_lang$core$Native_Platform.addPublicModule(Elm['Main'], 'Main', typeof _user$project$Main$main === 'undefined' ? null : _user$project$Main$main);
 
 if (typeof define === "function" && define['amd'])
 {
