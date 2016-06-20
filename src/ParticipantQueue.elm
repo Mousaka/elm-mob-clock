@@ -1,4 +1,4 @@
-module ParticipantQueue exposing ( Model, Msg, init, update, view, subscriptions )
+module ParticipantQueue exposing ( Model, Msg(Next), init, update, view, subscriptions )
 
 import Html exposing (Html, div, button, input, Attribute)
 import Html.App as Html
@@ -45,7 +45,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Add participant ->
-      ( {model | participants = List.append model.participants [participant]}, Cmd.none)
+      let participants' = List.append model.participants [participant] in
+      case model.selected of
+        Nothing ->
+          ( {model | participants = participants', selected = Just 0}, Cmd.none)
+        Just _ ->
+          ( {model | participants = participants'}, Cmd.none)
     FieldText inputText ->
       ( {model | fieldText = inputText}, Cmd.none)
     Next ->
@@ -90,8 +95,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div [] [
-      div [] [Html.text "Participants", nextButton ]
-    , displaySelected model.selected model.participants
+      displaySelected model.selected model.participants
     , displayParticipants model.participants
     , nameInput
     , addButton model.fieldText
@@ -104,7 +108,7 @@ displaySelected selected participants =
     Just index ->
      case get index participants of
        Just participant ->
-         displayOneParticipant participant
+         div [] [Html.text "Currently this participants turn: ", displayOneParticipant participant]
        Nothing ->
         div [] [Html.text "No one selected"]
     Nothing ->
@@ -119,7 +123,7 @@ get n list =
 
 displayParticipants : List Participant -> Html Msg
 displayParticipants participants =
-  div [] (List.map displayOneParticipant participants)
+  div [style [("margin-top", "20px")]] (List.map displayOneParticipant participants)
 
 displayOneParticipant : Participant -> Html Msg
 displayOneParticipant participant =

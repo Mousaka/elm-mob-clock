@@ -8492,30 +8492,300 @@ var _user$project$CountdownClock$main = {
 		})
 };
 
+var _user$project$ParticipantQueue$displayOneParticipant = function (participant) {
+	var _p0 = participant;
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(_p0._0)
+			]));
+};
+var _user$project$ParticipantQueue$displayParticipants = function (participants) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$style(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'margin-top', _1: '20px'}
+					]))
+			]),
+		A2(_elm_lang$core$List$map, _user$project$ParticipantQueue$displayOneParticipant, participants));
+};
+var _user$project$ParticipantQueue$get = F2(
+	function (n, list) {
+		return _elm_lang$core$List$head(
+			A2(_elm_lang$core$List$drop, n, list));
+	});
+var _user$project$ParticipantQueue$displaySelected = F2(
+	function (selected, participants) {
+		var _p1 = selected;
+		if (_p1.ctor === 'Just') {
+			var _p2 = A2(_user$project$ParticipantQueue$get, _p1._0, participants);
+			if (_p2.ctor === 'Just') {
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('Currently this participants turn: '),
+							_user$project$ParticipantQueue$displayOneParticipant(_p2._0)
+						]));
+			} else {
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text('No one selected')
+						]));
+			}
+		} else {
+			return A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('No one selected')
+					]));
+		}
+	});
+var _user$project$ParticipantQueue$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
+var _user$project$ParticipantQueue$nextPersonIndex = F2(
+	function (index, listSize) {
+		var nextIndex = index + 1;
+		var _p3 = _elm_lang$core$Native_Utils.cmp(nextIndex, listSize) < 0;
+		if (_p3 === true) {
+			return _elm_lang$core$Maybe$Just(nextIndex);
+		} else {
+			return _elm_lang$core$Maybe$Just(0);
+		}
+	});
+var _user$project$ParticipantQueue$firstPersonIndex = function (participants) {
+	var _p4 = _elm_lang$core$List$isEmpty(participants);
+	if (_p4 === true) {
+		return _elm_lang$core$Maybe$Nothing;
+	} else {
+		return _elm_lang$core$Maybe$Just(0);
+	}
+};
+var _user$project$ParticipantQueue$update = F2(
+	function (msg, model) {
+		var _p5 = msg;
+		switch (_p5.ctor) {
+			case 'Add':
+				var participants$ = A2(
+					_elm_lang$core$List$append,
+					model.participants,
+					_elm_lang$core$Native_List.fromArray(
+						[_p5._0]));
+				var _p6 = model.selected;
+				if (_p6.ctor === 'Nothing') {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								participants: participants$,
+								selected: _elm_lang$core$Maybe$Just(0)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{participants: participants$}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
+			case 'FieldText':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{fieldText: _p5._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				var _p7 = model.selected;
+				if (_p7.ctor === 'Nothing') {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								selected: _user$project$ParticipantQueue$firstPersonIndex(model.participants)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								selected: A2(
+									_user$project$ParticipantQueue$nextPersonIndex,
+									_p7._0,
+									_elm_lang$core$List$length(model.participants))
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
+		}
+	});
+var _user$project$ParticipantQueue$init = {
+	selected: _elm_lang$core$Maybe$Nothing,
+	participants: _elm_lang$core$Native_List.fromArray(
+		[]),
+	fieldText: ''
+};
+var _user$project$ParticipantQueue$Model = F3(
+	function (a, b, c) {
+		return {selected: a, participants: b, fieldText: c};
+	});
+var _user$project$ParticipantQueue$Name = function (a) {
+	return {ctor: 'Name', _0: a};
+};
+var _user$project$ParticipantQueue$Next = {ctor: 'Next'};
+var _user$project$ParticipantQueue$nextButton = A2(
+	_elm_lang$html$Html$button,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Events$onClick(_user$project$ParticipantQueue$Next)
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html$text('Next')
+		]));
+var _user$project$ParticipantQueue$FieldText = function (a) {
+	return {ctor: 'FieldText', _0: a};
+};
+var _user$project$ParticipantQueue$nameInput = A2(
+	_elm_lang$html$Html$input,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$placeholder('Add participant'),
+			_elm_lang$html$Html_Events$onInput(_user$project$ParticipantQueue$FieldText)
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[]));
+var _user$project$ParticipantQueue$Add = function (a) {
+	return {ctor: 'Add', _0: a};
+};
+var _user$project$ParticipantQueue$addButton = function (fieldText) {
+	return A2(
+		_elm_lang$html$Html$button,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Events$onClick(
+				_user$project$ParticipantQueue$Add(
+					_user$project$ParticipantQueue$Name(fieldText)))
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text('Add')
+			]));
+};
+var _user$project$ParticipantQueue$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(_user$project$ParticipantQueue$displaySelected, model.selected, model.participants),
+				_user$project$ParticipantQueue$displayParticipants(model.participants),
+				_user$project$ParticipantQueue$nameInput,
+				_user$project$ParticipantQueue$addButton(model.fieldText)
+			]));
+};
+var _user$project$ParticipantQueue$main = {
+	main: _elm_lang$html$Html_App$program(
+		{
+			init: A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_user$project$ParticipantQueue$init,
+				_elm_lang$core$Native_List.fromArray(
+					[])),
+			view: _user$project$ParticipantQueue$view,
+			update: _user$project$ParticipantQueue$update,
+			subscriptions: _user$project$ParticipantQueue$subscriptions
+		})
+};
+
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
-	_0: {countdownClock: _user$project$CountdownClock$init},
+	_0: {countdownClock: _user$project$CountdownClock$init, queue: _user$project$ParticipantQueue$init},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
-var _user$project$Main$Model = function (a) {
-	return {countdownClock: a};
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {countdownClock: a, queue: b};
+	});
+var _user$project$Main$Queue = function (a) {
+	return {ctor: 'Queue', _0: a};
 };
 var _user$project$Main$Clock = function (a) {
 	return {ctor: 'Clock', _0: a};
 };
+var _user$project$Main$updateClockWithQueueRoation = F2(
+	function (msg, model) {
+		var _p0 = A2(_user$project$CountdownClock$update, msg, model.countdownClock);
+		var newClockModel = _p0._0;
+		var clockCmds = _p0._1;
+		var mappedClockCmds = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds);
+		var _p1 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
+		var queueModel = _p1._0;
+		var queuecmd = _p1._1;
+		var model$ = _elm_lang$core$Native_Utils.update(
+			model,
+			{queue: queueModel, countdownClock: newClockModel});
+		return {ctor: '_Tuple2', _0: model$, _1: mappedClockCmds};
+	});
 var _user$project$Main$update = F2(
 	function (message, model) {
-		var _p0 = message;
-		var _p1 = A2(_user$project$CountdownClock$update, _p0._0, model.countdownClock);
-		var newClockState = _p1._0;
-		var clockCmds = _p1._1;
-		return {
-			ctor: '_Tuple2',
-			_0: _elm_lang$core$Native_Utils.update(
-				model,
-				{countdownClock: newClockState}),
-			_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
-		};
+		var _p2 = message;
+		if (_p2.ctor === 'Clock') {
+			var _p5 = _p2._0;
+			var _p3 = _p5;
+			if (_p3.ctor === 'Reset') {
+				return A2(_user$project$Main$updateClockWithQueueRoation, _p5, model);
+			} else {
+				var _p4 = A2(_user$project$CountdownClock$update, _p5, model.countdownClock);
+				var newClockModel = _p4._0;
+				var clockCmds = _p4._1;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{countdownClock: newClockModel}),
+					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
+				};
+			}
+		} else {
+			var _p6 = A2(_user$project$ParticipantQueue$update, _p2._0, model.queue);
+			var newQueueState = _p6._0;
+			var queueCmds = _p6._1;
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{queue: newQueueState}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queueCmds)
+			};
+		}
 	});
 var _user$project$Main$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$batch(
@@ -8537,7 +8807,11 @@ var _user$project$Main$view = function (model) {
 				A2(
 				_elm_lang$html$Html_App$map,
 				_user$project$Main$Clock,
-				_user$project$CountdownClock$view(model.countdownClock))
+				_user$project$CountdownClock$view(model.countdownClock)),
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$Queue,
+				_user$project$ParticipantQueue$view(model.queue))
 			]));
 };
 var _user$project$Main$main = {
