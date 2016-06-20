@@ -8521,139 +8521,96 @@ var _user$project$ParticipantQueue$get = F2(
 		return _elm_lang$core$List$head(
 			A2(_elm_lang$core$List$drop, n, list));
 	});
-var _user$project$ParticipantQueue$displaySelected = F2(
-	function (selected, participants) {
-		var _p1 = selected;
-		if (_p1.ctor === 'Just') {
-			var _p2 = A2(_user$project$ParticipantQueue$get, _p1._0, participants);
-			if (_p2.ctor === 'Just') {
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Currently this participants turn: '),
-							_user$project$ParticipantQueue$displayOneParticipant(_p2._0)
-						]));
-			} else {
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('No one selected')
-						]));
-			}
-		} else {
-			return A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('No one selected')
-					]));
-		}
-	});
+var _user$project$ParticipantQueue$displaySelected = function (participants) {
+	var _p1 = A2(_user$project$ParticipantQueue$get, 0, participants);
+	if (_p1.ctor === 'Just') {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text('Currently this participants turn: '),
+					_user$project$ParticipantQueue$displayOneParticipant(_p1._0)
+				]));
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text('No one selected')
+				]));
+	}
+};
 var _user$project$ParticipantQueue$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$none;
 };
-var _user$project$ParticipantQueue$nextPersonIndex = F2(
-	function (index, listSize) {
-		var nextIndex = index + 1;
-		var _p3 = _elm_lang$core$Native_Utils.cmp(nextIndex, listSize) < 0;
-		if (_p3 === true) {
-			return _elm_lang$core$Maybe$Just(nextIndex);
-		} else {
-			return _elm_lang$core$Maybe$Just(0);
-		}
-	});
-var _user$project$ParticipantQueue$firstPersonIndex = function (participants) {
-	var _p4 = _elm_lang$core$List$isEmpty(participants);
-	if (_p4 === true) {
-		return _elm_lang$core$Maybe$Nothing;
+var _user$project$ParticipantQueue$rotateQueue = function (participants) {
+	var _p2 = {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$List$head(participants),
+		_1: _elm_lang$core$List$tail(participants)
+	};
+	var head = _p2._0;
+	var tail = _p2._1;
+	var _p3 = {ctor: '_Tuple2', _0: head, _1: tail};
+	if (((_p3.ctor === '_Tuple2') && (_p3._0.ctor === 'Just')) && (_p3._1.ctor === 'Just')) {
+		return A2(
+			_elm_lang$core$List$append,
+			_p3._1._0,
+			_elm_lang$core$Native_List.fromArray(
+				[_p3._0._0]));
 	} else {
-		return _elm_lang$core$Maybe$Just(0);
+		return participants;
 	}
 };
 var _user$project$ParticipantQueue$update = F2(
 	function (msg, model) {
-		var _p5 = msg;
-		switch (_p5.ctor) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
 			case 'Add':
 				var participants$ = A2(
 					_elm_lang$core$List$append,
 					model.participants,
 					_elm_lang$core$Native_List.fromArray(
-						[_p5._0]));
-				var _p6 = model.selected;
-				if (_p6.ctor === 'Nothing') {
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								participants: participants$,
-								selected: _elm_lang$core$Maybe$Just(0)
-							}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				} else {
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{participants: participants$}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				}
+						[_p4._0]));
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{participants: participants$}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 			case 'FieldText':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{fieldText: _p5._0}),
+						{fieldText: _p4._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				var _p7 = model.selected;
-				if (_p7.ctor === 'Nothing') {
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								selected: _user$project$ParticipantQueue$firstPersonIndex(model.participants)
-							}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				} else {
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{
-								selected: A2(
-									_user$project$ParticipantQueue$nextPersonIndex,
-									_p7._0,
-									_elm_lang$core$List$length(model.participants))
-							}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				}
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							participants: _user$project$ParticipantQueue$rotateQueue(model.participants)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
 var _user$project$ParticipantQueue$init = {
-	selected: _elm_lang$core$Maybe$Nothing,
 	participants: _elm_lang$core$Native_List.fromArray(
 		[]),
 	fieldText: ''
 };
-var _user$project$ParticipantQueue$Model = F3(
-	function (a, b, c) {
-		return {selected: a, participants: b, fieldText: c};
+var _user$project$ParticipantQueue$Model = F2(
+	function (a, b) {
+		return {participants: a, fieldText: b};
 	});
 var _user$project$ParticipantQueue$Name = function (a) {
 	return {ctor: 'Name', _0: a};
@@ -8705,7 +8662,7 @@ var _user$project$ParticipantQueue$view = function (model) {
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				A2(_user$project$ParticipantQueue$displaySelected, model.selected, model.participants),
+				_user$project$ParticipantQueue$displaySelected(model.participants),
 				_user$project$ParticipantQueue$displayParticipants(model.participants),
 				_user$project$ParticipantQueue$nameInput,
 				_user$project$ParticipantQueue$addButton(model.fieldText)
@@ -8801,7 +8758,7 @@ var _user$project$Main$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
-			[]),
+			[_user$project$Styling$flexMiddle]),
 		_elm_lang$core$Native_List.fromArray(
 			[
 				A2(

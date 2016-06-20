@@ -23,15 +23,14 @@ main =
 type Participant = Name String
 
 type alias Model =
-  { selected : Maybe Int
-  , participants : List Participant
+  { participants : List Participant
   , fieldText : String
   }
 
 
 init : Model
 init =
-  { selected = Nothing , participants = [], fieldText = "" }
+  { participants = [], fieldText = "" }
 
 
 
@@ -46,40 +45,27 @@ update msg model =
   case msg of
     Add participant ->
       let participants' = List.append model.participants [participant] in
-      case model.selected of
-        Nothing ->
-          ( {model | participants = participants', selected = Just 0}, Cmd.none)
-        Just _ ->
-          ( {model | participants = participants'}, Cmd.none)
+      ( {model | participants = participants'}, Cmd.none)
+
     FieldText inputText ->
       ( {model | fieldText = inputText}, Cmd.none)
+
     Next ->
-      case model.selected of
-        Nothing ->
-          ( {model |
-            selected = (firstPersonIndex model.participants)}, Cmd.none)
-        Just currentIndex ->
-          ( {model |
-            selected = nextPersonIndex currentIndex (List.length model.participants)}, Cmd.none)
+      ( {model | participants = rotateQueue model.participants}, Cmd.none)
 
 
-firstPersonIndex : List Participant -> Maybe Int
-firstPersonIndex participants =
-  case List.isEmpty participants of
-    True ->
-      Nothing
-    False ->
-      Just 0
 
 
-nextPersonIndex : Int -> Int -> Maybe Int
-nextPersonIndex index listSize =
-  let nextIndex = index + 1 in
-  case nextIndex < listSize of
-    True ->
-      Just nextIndex
-    False ->
-      Just 0
+rotateQueue : List Participant -> List Participant
+rotateQueue participants =
+  let
+    (head, tail) = (List.head participants, List.tail participants)
+  in
+  case (head, tail) of
+    (Just h, Just t) ->
+      List.append t [h]
+    _ ->
+      participants
 
 
 -- SUBSCRIPTIONS
@@ -95,25 +81,20 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div [] [
-      displaySelected model.selected model.participants
+      displaySelected model.participants
     , displayParticipants model.participants
     , nameInput
     , addButton model.fieldText
     ]
 
 
-displaySelected : Maybe Int -> List Participant -> Html Msg
-displaySelected selected participants =
-  case selected of
-    Just index ->
-     case get index participants of
-       Just participant ->
-         div [] [Html.text "Currently this participants turn: ", displayOneParticipant participant]
-       Nothing ->
-        div [] [Html.text "No one selected"]
+displaySelected : List Participant -> Html Msg
+displaySelected participants =
+  case get 0 participants of
+    Just participant ->
+      div [] [Html.text "Currently this participants turn: ", displayOneParticipant participant]
     Nothing ->
       div [] [Html.text "No one selected"]
-
 
 
 get : Int -> List a -> Maybe a

@@ -1,6 +1,6 @@
 import CountdownClock exposing (..)
 import ParticipantQueue exposing (..)
-
+import Styling exposing (..)
 import Html.App as Html
 import Html exposing (Html, button, div, text)
 
@@ -91,7 +91,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div
-    []
+    [flexMiddle]
     [ Html.map Clock (CountdownClock.view model.countdownClock)
     , Html.map Queue (ParticipantQueue.view model.queue)
     ]
