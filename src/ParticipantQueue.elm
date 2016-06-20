@@ -55,7 +55,6 @@ update msg model =
 
 
 
-
 rotateQueue : List Participant -> List Participant
 rotateQueue participants =
   let
