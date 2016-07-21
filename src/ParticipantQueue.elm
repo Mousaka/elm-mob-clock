@@ -1,11 +1,15 @@
 module ParticipantQueue exposing ( Model, Msg(Next), init, update, view, subscriptions )
 
+import Styling exposing (..)
 import Html exposing (Html, div, button, input, Attribute)
 import Html.App as Html
 import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
+import Svg exposing (..)
+import String exposing (..)
+import Svg.Attributes exposing (..)
 
 main: Program Never
 main =
@@ -20,10 +24,8 @@ main =
 -- MODEL
 
 
-type Participant = Name String
-
 type alias Model =
-  { participants : List Participant
+  { participants : List String
   , fieldText : String
   }
 
@@ -33,19 +35,24 @@ init =
   { participants = [], fieldText = "" }
 
 
-
 -- UPDATE
 type Msg
-  = Add Participant
+  = Add (Maybe String)
   | FieldText String
   | Next
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Add participant ->
-      let participants' = List.append model.participants [participant] in
-      ( {model | participants = participants'}, Cmd.none)
+      case participant of
+        Just name ->
+            let participants' = List.append model.participants [name] in
+            ( {model | participants = participants', fieldText = ""}, Cmd.none)
+
+        Nothing ->
+            (model, Cmd.none)
 
     FieldText inputText ->
       ( {model | fieldText = inputText}, Cmd.none)
@@ -55,7 +62,7 @@ update msg model =
 
 
 
-rotateQueue : List Participant -> List Participant
+rotateQueue : List String -> List String
 rotateQueue participants =
   let
     (head, tail) = (List.head participants, List.tail participants)
@@ -79,21 +86,11 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-  div [] [
-      displaySelected model.participants
-    , displayParticipants model.participants
-    , nameInput
-    , addButton model.fieldText
+  div [ mediumText, fromBottom ]
+    [ displayParticipants model.participants
+    , nameInput model.fieldText
+    , add model.fieldText
     ]
-
-
-displaySelected : List Participant -> Html Msg
-displaySelected participants =
-  case get 0 participants of
-    Just participant ->
-      div [] [Html.text "Currently this participants turn: ", displayOneParticipant participant]
-    Nothing ->
-      div [] [Html.text "No one selected"]
 
 
 get : Int -> List a -> Maybe a
@@ -101,25 +98,49 @@ get n list =
   List.head (List.drop n list)
 
 
-displayParticipants : List Participant -> Html Msg
+displayParticipants : List String -> Html Msg
 displayParticipants participants =
-  div [style [("margin-top", "20px")]] (List.map displayOneParticipant participants)
+  case participants of
+    h::t ->
+      div [Html.Attributes.style [("margin-top", "20px")]] (displaySelected h :: List.map displayOneParticipant t)
+    []->
+      div [Html.Attributes.style [("margin-top", "20px")]] []
 
-displayOneParticipant : Participant -> Html Msg
+
+displaySelected : String -> Html Msg
+displaySelected participant =
+  div [selectedStyle] [Html.text participant]
+
+
+displayOneParticipant : String -> Html Msg
 displayOneParticipant participant =
-  case participant of
-    Name name ->
-      div [] [Html.text name]
+  div [notSelectedStyle] [Html.text participant]
 
 
-nameInput : Html Msg
-nameInput =
-  input [ placeholder "Add participant", onInput FieldText] []
-
-addButton : String -> Html Msg
-addButton fieldText =
-  button [ onClick (Add (Name fieldText)) ] [ Html.text "Add" ]
+nameInput : String -> Html Msg
+nameInput fieldText =
+  div [] [
+    input [minlength 1, queueInput, placeholder "Add participant", onInput FieldText, value fieldText] []
+  ]
 
 nextButton : Html Msg
 nextButton =
   button [ onClick Next ] [ Html.text "Next" ]
+
+
+add : String -> Html Msg
+add fieldText =
+  div [] [
+    svg [viewBox "0 0 100 100", Svg.Attributes.width "30px", Svg.Attributes.height "30px", onClick (Add (validInput fieldText))]
+    [ rect [ x "40", y "0", Svg.Attributes.width "20", Svg.Attributes.height "100", fill "#0B79CE"] []
+    , rect [ x "0", y "40", Svg.Attributes.width "100", Svg.Attributes.height "20", fill "#0B79CE"] []
+    ]
+  ]
+
+
+validInput: String -> Maybe String
+validInput text =
+  if String.length text > 0 then
+    Just text
+  else
+    Nothing
