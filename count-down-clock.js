@@ -8546,9 +8546,349 @@ var _user$project$CountdownClock$main = {
 		})
 };
 
+var _user$project$ParticipantQueue$validInput = function (text) {
+	return (_elm_lang$core$Native_Utils.cmp(
+		_elm_lang$core$String$length(text),
+		0) > 0) ? _elm_lang$core$Maybe$Just(text) : _elm_lang$core$Maybe$Nothing;
+};
+var _user$project$ParticipantQueue$displayOneParticipant = function (participant) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[_user$project$Styling$notSelectedStyle]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(participant)
+			]));
+};
+var _user$project$ParticipantQueue$displaySelected = function (participant) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[_user$project$Styling$selectedStyle]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(participant)
+			]));
+};
+var _user$project$ParticipantQueue$displayParticipants = function (participants) {
+	var _p0 = participants;
+	if (_p0.ctor === '::') {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$style(
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{ctor: '_Tuple2', _0: 'margin-top', _1: '20px'}
+						]))
+				]),
+			A2(
+				_elm_lang$core$List_ops['::'],
+				_user$project$ParticipantQueue$displaySelected(_p0._0),
+				A2(_elm_lang$core$List$map, _user$project$ParticipantQueue$displayOneParticipant, _p0._1)));
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$style(
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{ctor: '_Tuple2', _0: 'margin-top', _1: '20px'}
+						]))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	}
+};
+var _user$project$ParticipantQueue$get = F2(
+	function (n, list) {
+		return _elm_lang$core$List$head(
+			A2(_elm_lang$core$List$drop, n, list));
+	});
+var _user$project$ParticipantQueue$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$none;
+};
+var _user$project$ParticipantQueue$rotateQueue = function (participants) {
+	var _p1 = {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$List$head(participants),
+		_1: _elm_lang$core$List$tail(participants)
+	};
+	var head = _p1._0;
+	var tail = _p1._1;
+	var _p2 = {ctor: '_Tuple2', _0: head, _1: tail};
+	if (((_p2.ctor === '_Tuple2') && (_p2._0.ctor === 'Just')) && (_p2._1.ctor === 'Just')) {
+		return A2(
+			_elm_lang$core$List$append,
+			_p2._1._0,
+			_elm_lang$core$Native_List.fromArray(
+				[_p2._0._0]));
+	} else {
+		return participants;
+	}
+};
+var _user$project$ParticipantQueue$update = F2(
+	function (msg, model) {
+		var _p3 = msg;
+		switch (_p3.ctor) {
+			case 'Add':
+				var _p4 = _p3._0;
+				if (_p4.ctor === 'Just') {
+					var participants$ = A2(
+						_elm_lang$core$List$append,
+						model.participants,
+						_elm_lang$core$Native_List.fromArray(
+							[_p4._0]));
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{participants: participants$, fieldText: ''}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				} else {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+			case 'FieldText':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{fieldText: _p3._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							participants: _user$project$ParticipantQueue$rotateQueue(model.participants)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+		}
+	});
+var _user$project$ParticipantQueue$init = {
+	participants: _elm_lang$core$Native_List.fromArray(
+		[]),
+	fieldText: ''
+};
+var _user$project$ParticipantQueue$Model = F2(
+	function (a, b) {
+		return {participants: a, fieldText: b};
+	});
+var _user$project$ParticipantQueue$Next = {ctor: 'Next'};
+var _user$project$ParticipantQueue$nextButton = A2(
+	_elm_lang$html$Html$button,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Events$onClick(_user$project$ParticipantQueue$Next)
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html$text('Next')
+		]));
+var _user$project$ParticipantQueue$FieldText = function (a) {
+	return {ctor: 'FieldText', _0: a};
+};
+var _user$project$ParticipantQueue$nameInput = function (fieldText) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$input,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$minlength(1),
+						_user$project$Styling$queueInput,
+						_elm_lang$html$Html_Attributes$placeholder('Add participant'),
+						_elm_lang$html$Html_Events$onInput(_user$project$ParticipantQueue$FieldText),
+						_elm_lang$html$Html_Attributes$value(fieldText)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]))
+			]));
+};
+var _user$project$ParticipantQueue$Add = function (a) {
+	return {ctor: 'Add', _0: a};
+};
+var _user$project$ParticipantQueue$add = function (fieldText) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$svg$Svg$svg,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$svg$Svg_Attributes$viewBox('0 0 100 100'),
+						_elm_lang$svg$Svg_Attributes$width('30px'),
+						_elm_lang$svg$Svg_Attributes$height('30px'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$ParticipantQueue$Add(
+							_user$project$ParticipantQueue$validInput(fieldText)))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$svg$Svg$rect,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$svg$Svg_Attributes$x('40'),
+								_elm_lang$svg$Svg_Attributes$y('0'),
+								_elm_lang$svg$Svg_Attributes$width('20'),
+								_elm_lang$svg$Svg_Attributes$height('100'),
+								_elm_lang$svg$Svg_Attributes$fill('#0B79CE')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						A2(
+						_elm_lang$svg$Svg$rect,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$svg$Svg_Attributes$x('0'),
+								_elm_lang$svg$Svg_Attributes$y('40'),
+								_elm_lang$svg$Svg_Attributes$width('100'),
+								_elm_lang$svg$Svg_Attributes$height('20'),
+								_elm_lang$svg$Svg_Attributes$fill('#0B79CE')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[]))
+					]))
+			]));
+};
+var _user$project$ParticipantQueue$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[_user$project$Styling$mediumText, _user$project$Styling$fromBottom]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_user$project$ParticipantQueue$displayParticipants(model.participants),
+				_user$project$ParticipantQueue$nameInput(model.fieldText),
+				_user$project$ParticipantQueue$add(model.fieldText)
+			]));
+};
+var _user$project$ParticipantQueue$main = {
+	main: _elm_lang$html$Html_App$program(
+		{
+			init: A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_user$project$ParticipantQueue$init,
+				_elm_lang$core$Native_List.fromArray(
+					[])),
+			view: _user$project$ParticipantQueue$view,
+			update: _user$project$ParticipantQueue$update,
+			subscriptions: _user$project$ParticipantQueue$subscriptions
+		})
+};
+
+var _user$project$Main$init = {
+	ctor: '_Tuple2',
+	_0: {countdownClock: _user$project$CountdownClock$init, queue: _user$project$ParticipantQueue$init},
+	_1: _elm_lang$core$Platform_Cmd$none
+};
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {countdownClock: a, queue: b};
+	});
+var _user$project$Main$Queue = function (a) {
+	return {ctor: 'Queue', _0: a};
+};
+var _user$project$Main$Clock = function (a) {
+	return {ctor: 'Clock', _0: a};
+};
+var _user$project$Main$updateClockWithQueueRoation = F2(
+	function (msg, model) {
+		var _p0 = A2(_user$project$CountdownClock$update, msg, model.countdownClock);
+		var newClockModel = _p0._0;
+		var clockCmds = _p0._1;
+		var mappedClockCmds = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds);
+		var _p1 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
+		var queueModel = _p1._0;
+		var queuecmd = _p1._1;
+		var model$ = _elm_lang$core$Native_Utils.update(
+			model,
+			{queue: queueModel, countdownClock: newClockModel});
+		return {ctor: '_Tuple2', _0: model$, _1: mappedClockCmds};
+	});
+var _user$project$Main$update = F2(
+	function (message, model) {
+		var _p2 = message;
+		if (_p2.ctor === 'Clock') {
+			var _p5 = _p2._0;
+			var _p3 = _p5;
+			if (_p3.ctor === 'Reset') {
+				return A2(_user$project$Main$updateClockWithQueueRoation, _p5, model);
+			} else {
+				var _p4 = A2(_user$project$CountdownClock$update, _p5, model.countdownClock);
+				var newClockModel = _p4._0;
+				var clockCmds = _p4._1;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{countdownClock: newClockModel}),
+					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
+				};
+			}
+		} else {
+			var _p6 = A2(_user$project$ParticipantQueue$update, _p2._0, model.queue);
+			var newQueueState = _p6._0;
+			var queueCmds = _p6._1;
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{queue: newQueueState}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queueCmds)
+			};
+		}
+	});
+var _user$project$Main$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$core$Platform_Sub$map,
+				_user$project$Main$Clock,
+				_user$project$CountdownClock$subscriptions(model.countdownClock))
+			]));
+};
+var _user$project$Main$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[_user$project$Styling$flexMiddle]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$Clock,
+				_user$project$CountdownClock$view(model.countdownClock)),
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$Queue,
+				_user$project$ParticipantQueue$view(model.queue))
+			]));
+};
+var _user$project$Main$main = {
+	main: _elm_lang$html$Html_App$program(
+		{init: _user$project$Main$init, update: _user$project$Main$update, view: _user$project$Main$view, subscriptions: _user$project$Main$subscriptions})
+};
+
 var Elm = {};
-Elm['CountdownClock'] = Elm['CountdownClock'] || {};
-_elm_lang$core$Native_Platform.addPublicModule(Elm['CountdownClock'], 'CountdownClock', typeof _user$project$CountdownClock$main === 'undefined' ? null : _user$project$CountdownClock$main);
+Elm['Main'] = Elm['Main'] || {};
+_elm_lang$core$Native_Platform.addPublicModule(Elm['Main'], 'Main', typeof _user$project$Main$main === 'undefined' ? null : _user$project$Main$main);
 
 if (typeof define === "function" && define['amd'])
 {
