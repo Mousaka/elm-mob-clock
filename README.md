@@ -13,5 +13,5 @@ To build:
 
 * `npm install elm`
 * `elm-package install`
-* `elm make src/CountdownClock.elm --output=count-down-clock.js`
+* `elm make src/Main.elm --output=count-down-clock.js`
 
