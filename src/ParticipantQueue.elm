@@ -10,6 +10,7 @@ import Html.Events exposing (onInput)
 import Svg exposing (..)
 import String exposing (..)
 import Svg.Attributes exposing (..)
+import Keyboard
 
 main: Program Never
 main =
@@ -40,11 +41,19 @@ type Msg
   = Add (Maybe String)
   | FieldText String
   | Next
+  | KeyDown Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    KeyDown key ->
+      case key of
+        13 ->
+          update (Add (validInput model.fieldText)) model
+        _ ->
+          (model, Cmd.none)
+
     Add participant ->
       case participant of
         Just name ->
@@ -79,7 +88,7 @@ rotateQueue participants =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  Keyboard.downs KeyDown
 
 
 -- VIEW

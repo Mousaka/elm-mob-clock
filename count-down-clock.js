@@ -1249,49 +1249,123 @@ var _elm_lang$core$Native_Utils = function() {
 
 // COMPARISONS
 
-function eq(rootX, rootY)
+function eq(x, y)
 {
-	var stack = [{ x: rootX, y: rootY }];
-	while (stack.length > 0)
+	var stack = [];
+	var isEqual = eqHelp(x, y, 0, stack);
+	var pair;
+	while (isEqual && (pair = stack.pop()))
 	{
-		var front = stack.pop();
-		var x = front.x;
-		var y = front.y;
-		if (x === y)
+		isEqual = eqHelp(pair.x, pair.y, 0, stack);
+	}
+	return isEqual;
+}
+
+
+function eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push({ x: x, y: y });
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object')
+	{
+		if (typeof x === 'function')
 		{
-			continue;
+			throw new Error(
+				'Trying to use `(==)` on functions. There is no way to know if functions are "the same" in the Elm sense.'
+				+ ' Read more about this at http://package.elm-lang.org/packages/elm-lang/core/latest/Basics#=='
+				+ ' which describes why it is this way and what the better version will look like.'
+			);
 		}
-		if (typeof x === 'object')
+		return false;
+	}
+
+	if (x === null || y === null)
+	{
+		return false
+	}
+
+	if (x instanceof Date)
+	{
+		return x.getTime() === y.getTime();
+	}
+
+	if (!('ctor' in x))
+	{
+		for (var key in x)
 		{
-			var c = 0;
-			for (var key in x)
-			{
-				++c;
-				if (!(key in y))
-				{
-					return false;
-				}
-				if (key === 'ctor')
-				{
-					continue;
-				}
-				stack.push({ x: x[key], y: y[key] });
-			}
-			if ('ctor' in x)
-			{
-				stack.push({ x: x.ctor, y: y.ctor});
-			}
-			if (c !== Object.keys(y).length)
+			if (!eqHelp(x[key], y[key], depth + 1, stack))
 			{
 				return false;
 			}
 		}
-		else if (typeof x === 'function')
+		return true;
+	}
+
+	// convert Dicts and Sets to lists
+	if (x.ctor === 'RBNode_elm_builtin' || x.ctor === 'RBEmpty_elm_builtin')
+	{
+		x = _elm_lang$core$Dict$toList(x);
+		y = _elm_lang$core$Dict$toList(y);
+	}
+	if (x.ctor === 'Set_elm_builtin')
+	{
+		x = _elm_lang$core$Set$toList(x);
+		y = _elm_lang$core$Set$toList(y);
+	}
+
+	// check if lists are equal without recursion
+	if (x.ctor === '::')
+	{
+		var a = x;
+		var b = y;
+		while (a.ctor === '::' && b.ctor === '::')
 		{
-			throw new Error('Equality error: general function equality is ' +
-							'undecidable, and therefore, unsupported');
+			if (!eqHelp(a._0, b._0, depth + 1, stack))
+			{
+				return false;
+			}
+			a = a._1;
+			b = b._1;
 		}
-		else
+		return a.ctor === b.ctor;
+	}
+
+	// check if Arrays are equal
+	if (x.ctor === '_Array')
+	{
+		var xs = _elm_lang$core$Native_Array.toJSArray(x);
+		var ys = _elm_lang$core$Native_Array.toJSArray(y);
+		if (xs.length !== ys.length)
+		{
+			return false;
+		}
+		for (var i = 0; i < xs.length; i++)
+		{
+			if (!eqHelp(xs[i], ys[i], depth + 1, stack))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	if (!eqHelp(x.ctor, y.ctor, depth + 1, stack))
+	{
+		return false;
+	}
+
+	for (var key in x)
+	{
+		if (!eqHelp(x[key], y[key], depth + 1, stack))
 		{
 			return false;
 		}
@@ -1306,34 +1380,23 @@ var LT = -1, EQ = 0, GT = 1;
 
 function cmp(x, y)
 {
-	var ord;
 	if (typeof x !== 'object')
 	{
 		return x === y ? EQ : x < y ? LT : GT;
 	}
-	else if (x instanceof String)
+
+	if (x instanceof String)
 	{
 		var a = x.valueOf();
 		var b = y.valueOf();
-		return a === b
-			? EQ
-			: a < b
-				? LT
-				: GT;
+		return a === b ? EQ : a < b ? LT : GT;
 	}
-	else if (x.ctor === '::' || x.ctor === '[]')
+
+	if (x.ctor === '::' || x.ctor === '[]')
 	{
-		while (true)
+		while (x.ctor === '::' && y.ctor === '::')
 		{
-			if (x.ctor === '[]' && y.ctor === '[]')
-			{
-				return EQ;
-			}
-			if (x.ctor !== y.ctor)
-			{
-				return x.ctor === '[]' ? LT : GT;
-			}
-			ord = cmp(x._0, y._0);
+			var ord = cmp(x._0, y._0);
 			if (ord !== EQ)
 			{
 				return ord;
@@ -1341,9 +1404,12 @@ function cmp(x, y)
 			x = x._1;
 			y = y._1;
 		}
+		return x.ctor === y.ctor ? EQ : x.ctor === '[]' ? LT : GT;
 	}
-	else if (x.ctor.slice(0, 6) === '_Tuple')
+
+	if (x.ctor.slice(0, 6) === '_Tuple')
 	{
+		var ord;
 		var n = x.ctor.slice(6) - 0;
 		var err = 'cannot compare tuples with more than 6 elements.';
 		if (n === 0) return EQ;
@@ -1356,12 +1422,12 @@ function cmp(x, y)
 		if (n >= 7) throw new Error('Comparison error: ' + err); } } } } } }
 		return EQ;
 	}
-	else
-	{
-		throw new Error('Comparison error: comparison is only defined on ints, ' +
-						'floats, times, chars, strings, lists of comparable values, ' +
-						'and tuples of comparable values.');
-	}
+
+	throw new Error(
+		'Comparison error: comparison is only defined on ints, '
+		+ 'floats, times, chars, strings, lists of comparable values, '
+		+ 'and tuples of comparable values.'
+	);
 }
 
 
@@ -1574,24 +1640,14 @@ function toString(v)
 			return '[]';
 		}
 
-		if (v.ctor === 'RBNode_elm_builtin' || v.ctor === 'RBEmpty_elm_builtin' || v.ctor === 'Set_elm_builtin')
+		if (v.ctor === 'Set_elm_builtin')
 		{
-			var name, list;
-			if (v.ctor === 'Set_elm_builtin')
-			{
-				name = 'Set';
-				list = A2(
-					_elm_lang$core$List$map,
-					function(x) {return x._0; },
-					_elm_lang$core$Dict$toList(v._0)
-				);
-			}
-			else
-			{
-				name = 'Dict';
-				list = _elm_lang$core$Dict$toList(v);
-			}
-			return name + '.fromList ' + toString(list);
+			return 'Set.fromList ' + toString(_elm_lang$core$Set$toList(v));
+		}
+
+		if (v.ctor === 'RBNode_elm_builtin' || v.ctor === 'RBEmpty_elm_builtin')
+		{
+			return 'Dict.fromList ' + toString(_elm_lang$core$Dict$toList(v));
 		}
 
 		var output = '';
@@ -1608,6 +1664,16 @@ function toString(v)
 
 	if (type === 'object')
 	{
+		if (v instanceof Date)
+		{
+			return '<' + v.toString() + '>';
+		}
+
+		if (v.elm_web_socket)
+		{
+			return '<websocket>';
+		}
+
 		var output = [];
 		for (var k in v)
 		{
@@ -4280,33 +4346,50 @@ var _elm_lang$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
 			function (rKey, rValue, _p2) {
-				var _p3 = _p2;
-				var _p9 = _p3._1;
-				var _p8 = _p3._0;
-				var _p4 = _p8;
-				if (_p4.ctor === '[]') {
-					return {
-						ctor: '_Tuple2',
-						_0: _p8,
-						_1: A3(rightStep, rKey, rValue, _p9)
-					};
-				} else {
-					var _p7 = _p4._1;
-					var _p6 = _p4._0._1;
-					var _p5 = _p4._0._0;
-					return (_elm_lang$core$Native_Utils.cmp(_p5, rKey) < 0) ? {
-						ctor: '_Tuple2',
-						_0: _p7,
-						_1: A3(leftStep, _p5, _p6, _p9)
-					} : ((_elm_lang$core$Native_Utils.cmp(_p5, rKey) > 0) ? {
-						ctor: '_Tuple2',
-						_0: _p8,
-						_1: A3(rightStep, rKey, rValue, _p9)
-					} : {
-						ctor: '_Tuple2',
-						_0: _p7,
-						_1: A4(bothStep, _p5, _p6, rValue, _p9)
-					});
+				stepState:
+				while (true) {
+					var _p3 = _p2;
+					var _p9 = _p3._1;
+					var _p8 = _p3._0;
+					var _p4 = _p8;
+					if (_p4.ctor === '[]') {
+						return {
+							ctor: '_Tuple2',
+							_0: _p8,
+							_1: A3(rightStep, rKey, rValue, _p9)
+						};
+					} else {
+						var _p7 = _p4._1;
+						var _p6 = _p4._0._1;
+						var _p5 = _p4._0._0;
+						if (_elm_lang$core$Native_Utils.cmp(_p5, rKey) < 0) {
+							var _v10 = rKey,
+								_v11 = rValue,
+								_v12 = {
+								ctor: '_Tuple2',
+								_0: _p7,
+								_1: A3(leftStep, _p5, _p6, _p9)
+							};
+							rKey = _v10;
+							rValue = _v11;
+							_p2 = _v12;
+							continue stepState;
+						} else {
+							if (_elm_lang$core$Native_Utils.cmp(_p5, rKey) > 0) {
+								return {
+									ctor: '_Tuple2',
+									_0: _p8,
+									_1: A3(rightStep, rKey, rValue, _p9)
+								};
+							} else {
+								return {
+									ctor: '_Tuple2',
+									_0: _p7,
+									_1: A4(bothStep, _p5, _p6, rValue, _p9)
+								};
+							}
+						}
+					}
 				}
 			});
 		var _p10 = A3(
@@ -4349,19 +4432,19 @@ var _elm_lang$core$Dict$reportRemBug = F4(
 	});
 var _elm_lang$core$Dict$isBBlack = function (dict) {
 	var _p13 = dict;
-	_v11_2:
+	_v14_2:
 	do {
 		if (_p13.ctor === 'RBNode_elm_builtin') {
 			if (_p13._0.ctor === 'BBlack') {
 				return true;
 			} else {
-				break _v11_2;
+				break _v14_2;
 			}
 		} else {
 			if (_p13._0.ctor === 'LBBlack') {
 				return true;
 			} else {
-				break _v11_2;
+				break _v14_2;
 			}
 		}
 	} while(false);
@@ -4375,10 +4458,10 @@ var _elm_lang$core$Dict$sizeHelp = F2(
 			if (_p14.ctor === 'RBEmpty_elm_builtin') {
 				return n;
 			} else {
-				var _v13 = A2(_elm_lang$core$Dict$sizeHelp, n + 1, _p14._4),
-					_v14 = _p14._3;
-				n = _v13;
-				dict = _v14;
+				var _v16 = A2(_elm_lang$core$Dict$sizeHelp, n + 1, _p14._4),
+					_v17 = _p14._3;
+				n = _v16;
+				dict = _v17;
 				continue sizeHelp;
 			}
 		}
@@ -4397,18 +4480,18 @@ var _elm_lang$core$Dict$get = F2(
 				var _p16 = A2(_elm_lang$core$Basics$compare, targetKey, _p15._1);
 				switch (_p16.ctor) {
 					case 'LT':
-						var _v17 = targetKey,
-							_v18 = _p15._3;
-						targetKey = _v17;
-						dict = _v18;
+						var _v20 = targetKey,
+							_v21 = _p15._3;
+						targetKey = _v20;
+						dict = _v21;
 						continue get;
 					case 'EQ':
 						return _elm_lang$core$Maybe$Just(_p15._2);
 					default:
-						var _v19 = targetKey,
-							_v20 = _p15._4;
-						targetKey = _v19;
-						dict = _v20;
+						var _v22 = targetKey,
+							_v23 = _p15._4;
+						targetKey = _v22;
+						dict = _v23;
 						continue get;
 				}
 			}
@@ -4431,12 +4514,12 @@ var _elm_lang$core$Dict$maxWithDefault = F3(
 			if (_p18.ctor === 'RBEmpty_elm_builtin') {
 				return {ctor: '_Tuple2', _0: k, _1: v};
 			} else {
-				var _v23 = _p18._1,
-					_v24 = _p18._2,
-					_v25 = _p18._4;
-				k = _v23;
-				v = _v24;
-				r = _v25;
+				var _v26 = _p18._1,
+					_v27 = _p18._2,
+					_v28 = _p18._4;
+				k = _v26;
+				v = _v27;
+				r = _v28;
 				continue maxWithDefault;
 			}
 		}
@@ -4562,19 +4645,19 @@ var _elm_lang$core$Dict$redden = function (t) {
 };
 var _elm_lang$core$Dict$balanceHelp = function (tree) {
 	var _p27 = tree;
-	_v33_6:
+	_v36_6:
 	do {
-		_v33_5:
+		_v36_5:
 		do {
-			_v33_4:
+			_v36_4:
 			do {
-				_v33_3:
+				_v36_3:
 				do {
-					_v33_2:
+					_v36_2:
 					do {
-						_v33_1:
+						_v36_1:
 						do {
-							_v33_0:
+							_v36_0:
 							do {
 								if (_p27.ctor === 'RBNode_elm_builtin') {
 									if (_p27._3.ctor === 'RBNode_elm_builtin') {
@@ -4584,44 +4667,44 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
 																	if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																		break _v33_2;
+																		break _v36_2;
 																	} else {
 																		if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																			break _v33_3;
+																			break _v36_3;
 																		} else {
-																			break _v33_6;
+																			break _v36_6;
 																		}
 																	}
 																}
 															}
 														case 'NBlack':
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
 																	if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																		break _v33_4;
+																		break _v36_4;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															}
 														default:
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
-																	break _v33_6;
+																	break _v36_6;
 																}
 															}
 													}
@@ -4629,81 +4712,81 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																break _v33_2;
+																break _v36_2;
 															} else {
 																if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																	break _v33_3;
+																	break _v36_3;
 																} else {
 																	if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																		break _v33_5;
+																		break _v36_5;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															}
 														case 'NBlack':
 															if (_p27._0.ctor === 'BBlack') {
 																if ((((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																	break _v33_4;
+																	break _v36_4;
 																} else {
 																	if ((((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																		break _v33_5;
+																		break _v36_5;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 														default:
 															if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																break _v33_5;
+																break _v36_5;
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 													}
 												default:
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																break _v33_2;
+																break _v36_2;
 															} else {
 																if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																	break _v33_3;
+																	break _v36_3;
 																} else {
-																	break _v33_6;
+																	break _v36_6;
 																}
 															}
 														case 'NBlack':
 															if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																break _v33_4;
+																break _v36_4;
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 														default:
-															break _v33_6;
+															break _v36_6;
 													}
 											}
 										} else {
 											switch (_p27._3._0.ctor) {
 												case 'Red':
 													if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-														break _v33_0;
+														break _v36_0;
 													} else {
 														if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-															break _v33_1;
+															break _v36_1;
 														} else {
-															break _v33_6;
+															break _v36_6;
 														}
 													}
 												case 'NBlack':
 													if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-														break _v33_5;
+														break _v36_5;
 													} else {
-														break _v33_6;
+														break _v36_6;
 													}
 												default:
-													break _v33_6;
+													break _v36_6;
 											}
 										}
 									} else {
@@ -4711,29 +4794,29 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 											switch (_p27._4._0.ctor) {
 												case 'Red':
 													if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-														break _v33_2;
+														break _v36_2;
 													} else {
 														if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-															break _v33_3;
+															break _v36_3;
 														} else {
-															break _v33_6;
+															break _v36_6;
 														}
 													}
 												case 'NBlack':
 													if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-														break _v33_4;
+														break _v36_4;
 													} else {
-														break _v33_6;
+														break _v36_6;
 													}
 												default:
-													break _v33_6;
+													break _v36_6;
 											}
 										} else {
-											break _v33_6;
+											break _v36_6;
 										}
 									}
 								} else {
-									break _v33_6;
+									break _v36_6;
 								}
 							} while(false);
 							return _elm_lang$core$Dict$balancedTree(_p27._0)(_p27._3._3._1)(_p27._3._3._2)(_p27._3._1)(_p27._3._2)(_p27._1)(_p27._2)(_p27._3._3._3)(_p27._3._3._4)(_p27._3._4)(_p27._4);
@@ -5532,6 +5615,11 @@ function badOneOf(problems)
 	return { tag: 'oneOf', problems: problems };
 }
 
+function badCustom(msg)
+{
+	return { tag: 'custom', msg: msg };
+}
+
 function bad(msg)
 {
 	return { tag: 'fail', msg: msg };
@@ -5568,6 +5656,11 @@ function badToString(problem)
 				return 'I ran into the following problems'
 					+ (context === '_' ? '' : ' at ' + context)
 					+ ':\n\n' + problems.join('\n');
+
+			case 'custom':
+				return 'A `customDecode` failed'
+					+ (context === '_' ? '' : ' at ' + context)
+					+ ' with the message: ' + problem.msg;
 
 			case 'fail':
 				return 'I ran into a `fail` decoder'
@@ -5771,7 +5864,7 @@ function runHelp(decoder, value)
 			var realResult = decoder.callback(result.value);
 			if (realResult.ctor === 'Err')
 			{
-				return badPrimitive('something custom', value);
+				return badCustom(realResult._0);
 			}
 			return ok(realResult._0);
 
@@ -6025,6 +6118,47 @@ var _elm_lang$core$Json_Decode$dict = function (decoder) {
 };
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
 
+var _elm_lang$core$Process$kill = _elm_lang$core$Native_Scheduler.kill;
+var _elm_lang$core$Process$sleep = _elm_lang$core$Native_Scheduler.sleep;
+var _elm_lang$core$Process$spawn = _elm_lang$core$Native_Scheduler.spawn;
+
+var _elm_lang$dom$Native_Dom = function() {
+
+function on(node)
+{
+	return function(eventName, decoder, toTask)
+	{
+		return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+
+			function performTask(event)
+			{
+				var result = A2(_elm_lang$core$Json_Decode$decodeValue, decoder, event);
+				if (result.ctor === 'Ok')
+				{
+					_elm_lang$core$Native_Scheduler.rawSpawn(toTask(result._0));
+				}
+			}
+
+			node.addEventListener(eventName, performTask);
+
+			return function()
+			{
+				node.removeEventListener(eventName, performTask);
+			};
+		});
+	};
+}
+
+return {
+	onDocument: F3(on(document)),
+	onWindow: F3(on(window))
+};
+
+}();
+
+var _elm_lang$dom$Dom_LowLevel$onWindow = _elm_lang$dom$Native_Dom.onWindow;
+var _elm_lang$dom$Dom_LowLevel$onDocument = _elm_lang$dom$Native_Dom.onDocument;
+
 //import Native.Json //
 
 var _elm_lang$virtual_dom$Native_VirtualDom = function() {
@@ -6084,6 +6218,34 @@ function nodeHelp(tag, factList, kidList)
 }
 
 
+function keyedNode(tag, factList, kidList)
+{
+	var organized = organizeFacts(factList);
+	var namespace = organized.namespace;
+	var facts = organized.facts;
+
+	var children = [];
+	var descendantsCount = 0;
+	while (kidList.ctor !== '[]')
+	{
+		var kid = kidList._0;
+		descendantsCount += (kid._1.descendantsCount || 0);
+		children.push(kid);
+		kidList = kidList._1;
+	}
+	descendantsCount += children.length;
+
+	return {
+		type: 'keyed-node',
+		tag: tag,
+		facts: facts,
+		children: children,
+		namespace: namespace,
+		descendantsCount: descendantsCount
+	};
+}
+
+
 function custom(factList, model, impl)
 {
 	var facts = organizeFacts(factList).facts;
@@ -6115,7 +6277,7 @@ function thunk(func, args, thunk)
 		func: func,
 		args: args,
 		thunk: thunk,
-		node: null
+		node: undefined
 	};
 }
 
@@ -6267,7 +6429,7 @@ function equalEvents(a, b)
 
 function renderer(parent, tagger, initialVirtualNode)
 {
-	var eventNode = { tagger: tagger, parent: null };
+	var eventNode = { tagger: tagger, parent: undefined };
 
 	var domNode = render(initialVirtualNode, eventNode);
 	parent.appendChild(domNode);
@@ -6340,7 +6502,7 @@ function render(vNode, eventNode)
 		case 'tagger':
 			var subNode = vNode.node;
 			var tagger = vNode.tagger;
-		
+
 			while (subNode.type === 'tagger')
 			{
 				typeof tagger !== 'object'
@@ -6349,12 +6511,12 @@ function render(vNode, eventNode)
 
 				subNode = subNode.node;
 			}
-            
+
 			var subEventRoot = {
 				tagger: tagger,
 				parent: eventNode
 			};
-			
+
 			var domNode = render(subNode, subEventRoot);
 			domNode.elm_event_node_ref = subEventRoot;
 			return domNode;
@@ -6374,6 +6536,22 @@ function render(vNode, eventNode)
 			for (var i = 0; i < children.length; i++)
 			{
 				domNode.appendChild(render(children[i], eventNode));
+			}
+
+			return domNode;
+
+		case 'keyed-node':
+			var domNode = vNode.namespace
+				? document.createElementNS(vNode.namespace, vNode.tag)
+				: document.createElement(vNode.tag);
+
+			applyFacts(domNode, eventNode, vNode.facts);
+
+			var children = vNode.children;
+
+			for (var i = 0; i < children.length; i++)
+			{
+				domNode.appendChild(render(children[i]._1, eventNode));
 			}
 
 			return domNode;
@@ -6568,8 +6746,8 @@ function makePatch(type, index, data)
 		index: index,
 		type: type,
 		data: data,
-		domNode: null,
-		eventNode: null
+		domNode: undefined,
+		eventNode: undefined
 	};
 }
 
@@ -6694,6 +6872,25 @@ function diffHelp(a, b, patches, index)
 			diffChildren(a, b, patches, index);
 			return;
 
+		case 'keyed-node':
+			// Bail if obvious indicators have changed. Implies more serious
+			// structural changes such that it's not worth it to diff.
+			if (a.tag !== b.tag || a.namespace !== b.namespace)
+			{
+				patches.push(makePatch('p-redraw', index, b));
+				return;
+			}
+
+			var factsDiff = diffFacts(a.facts, b.facts);
+
+			if (typeof factsDiff !== 'undefined')
+			{
+				patches.push(makePatch('p-facts', index, factsDiff));
+			}
+
+			diffKeyedChildren(a, b, patches, index);
+			return;
+
 		case 'custom':
 			if (a.impl !== b.impl)
 			{
@@ -6814,11 +7011,11 @@ function diffChildren(aParent, bParent, patches, rootIndex)
 
 	if (aLen > bLen)
 	{
-		patches.push(makePatch('p-remove', rootIndex, aLen - bLen));
+		patches.push(makePatch('p-remove-last', rootIndex, aLen - bLen));
 	}
 	else if (aLen < bLen)
 	{
-		patches.push(makePatch('p-insert', rootIndex, bChildren.slice(aLen)));
+		patches.push(makePatch('p-append', rootIndex, bChildren.slice(aLen)));
 	}
 
 	// PAIRWISE DIFF EVERYTHING ELSE
@@ -6832,6 +7029,260 @@ function diffChildren(aParent, bParent, patches, rootIndex)
 		diffHelp(aChild, bChildren[i], patches, index);
 		index += aChild.descendantsCount || 0;
 	}
+}
+
+
+
+////////////  KEYED DIFF  ////////////
+
+
+function diffKeyedChildren(aParent, bParent, patches, rootIndex)
+{
+	var localPatches = [];
+
+	var changes = {}; // Dict String Entry
+	var inserts = []; // Array { index : Int, entry : Entry }
+	// type Entry = { tag : String, vnode : VNode, index : Int, data : _ }
+
+	var aChildren = aParent.children;
+	var bChildren = bParent.children;
+	var aLen = aChildren.length;
+	var bLen = bChildren.length;
+	var aIndex = 0;
+	var bIndex = 0;
+
+	var index = rootIndex;
+
+	while (aIndex < aLen && bIndex < bLen)
+	{
+		var a = aChildren[aIndex];
+		var b = bChildren[bIndex];
+
+		var aKey = a._0;
+		var bKey = b._0;
+		var aNode = a._1;
+		var bNode = b._1;
+
+		// check if keys match
+
+		if (aKey === bKey)
+		{
+			index++;
+			diffHelp(aNode, bNode, localPatches, index);
+			index += aNode.descendantsCount || 0;
+
+			aIndex++;
+			bIndex++;
+			continue;
+		}
+
+		// look ahead 1 to detect insertions and removals.
+
+		var aLookAhead = aIndex + 1 < aLen;
+		var bLookAhead = bIndex + 1 < bLen;
+
+		if (aLookAhead)
+		{
+			var aNext = aChildren[aIndex + 1];
+			var aNextKey = aNext._0;
+			var aNextNode = aNext._1;
+			var oldMatch = bKey === aNextKey;
+		}
+
+		if (bLookAhead)
+		{
+			var bNext = bChildren[bIndex + 1];
+			var bNextKey = bNext._0;
+			var bNextNode = bNext._1;
+			var newMatch = aKey === bNextKey;
+		}
+
+
+		// swap a and b
+		if (aLookAhead && bLookAhead && newMatch && oldMatch)
+		{
+			index++;
+			diffHelp(aNode, bNextNode, localPatches, index);
+			insertNode(changes, localPatches, aKey, bNode, bIndex, inserts);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			removeNode(changes, localPatches, aKey, aNextNode, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 2;
+			continue;
+		}
+
+		// insert b
+		if (bLookAhead && newMatch)
+		{
+			index++;
+			insertNode(changes, localPatches, bKey, bNode, bIndex, inserts);
+			diffHelp(aNode, bNextNode, localPatches, index);
+			index += aNode.descendantsCount || 0;
+
+			aIndex += 1;
+			bIndex += 2;
+			continue;
+		}
+
+		// remove a
+		if (aLookAhead && oldMatch)
+		{
+			index++;
+			removeNode(changes, localPatches, aKey, aNode, index);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			diffHelp(aNextNode, bNode, localPatches, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 1;
+			continue;
+		}
+
+		// remove a, insert b
+		if (aLookAhead && bLookAhead && aNextKey === bNextKey)
+		{
+			index++;
+			removeNode(changes, localPatches, aKey, aNode, index);
+			insertNode(changes, localPatches, bKey, bNode, bIndex, inserts);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			diffHelp(aNextNode, bNextNode, localPatches, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 2;
+			continue;
+		}
+
+		break;
+	}
+
+	// eat up any remaining nodes with removeNode and insertNode
+
+	while (aIndex < aLen)
+	{
+		index++;
+		var a = aChildren[aIndex];
+		var aNode = a._1;
+		removeNode(changes, localPatches, a._0, aNode, index);
+		index += aNode.descendantsCount || 0;
+		aIndex++;
+	}
+
+	var endInserts;
+	while (bIndex < bLen)
+	{
+		endInserts = endInserts || [];
+		var b = bChildren[bIndex];
+		insertNode(changes, localPatches, b._0, b._1, undefined, endInserts);
+		bIndex++;
+	}
+
+	if (localPatches.length > 0 || inserts.length > 0 || typeof endInserts !== 'undefined')
+	{
+		patches.push(makePatch('p-reorder', rootIndex, {
+			patches: localPatches,
+			inserts: inserts,
+			endInserts: endInserts
+		}));
+	}
+}
+
+
+
+////////////  CHANGES FROM KEYED DIFF  ////////////
+
+
+var POSTFIX = '_elmW6BL';
+
+
+function insertNode(changes, localPatches, key, vnode, bIndex, inserts)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (typeof entry === 'undefined')
+	{
+		entry = {
+			tag: 'insert',
+			vnode: vnode,
+			index: bIndex,
+			data: undefined
+		};
+
+		inserts.push({ index: bIndex, entry: entry });
+		changes[key] = entry;
+
+		return;
+	}
+
+	// this key was removed earlier, a match!
+	if (entry.tag === 'remove')
+	{
+		inserts.push({ index: bIndex, entry: entry });
+
+		entry.tag = 'move';
+		var subPatches = [];
+		diffHelp(entry.vnode, vnode, subPatches, entry.index);
+		entry.index = bIndex;
+		entry.data.data = {
+			patches: subPatches,
+			entry: entry
+		};
+
+		return;
+	}
+
+	// this key has already been inserted or moved, a duplicate!
+	insertNode(changes, localPatches, key + POSTFIX, vnode, bIndex, inserts);
+}
+
+
+function removeNode(changes, localPatches, key, vnode, index)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (typeof entry === 'undefined')
+	{
+		var patch = makePatch('p-remove', index, undefined);
+		localPatches.push(patch);
+
+		changes[key] = {
+			tag: 'remove',
+			vnode: vnode,
+			index: index,
+			data: patch
+		};
+
+		return;
+	}
+
+	// this key was inserted earlier, a match!
+	if (entry.tag === 'insert')
+	{
+		entry.tag = 'move';
+		var subPatches = [];
+		diffHelp(vnode, entry.vnode, subPatches, index);
+
+		var patch = makePatch('p-remove', index, {
+			patches: subPatches,
+			entry: entry
+		});
+		localPatches.push(patch);
+
+		return;
+	}
+
+	// this key has already been removed or moved, a duplicate!
+	removeNode(changes, localPatches, key + POSTFIX, vnode, index);
 }
 
 
@@ -6864,6 +7315,33 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 		{
 			addDomNodes(domNode, vNode.node, patch.data, eventNode);
 		}
+		else if (patchType === 'p-reorder')
+		{
+			patch.domNode = domNode;
+			patch.eventNode = eventNode;
+
+			var subPatches = patch.data.patches;
+			if (subPatches.length > 0)
+			{
+				addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+			}
+		}
+		else if (patchType === 'p-remove')
+		{
+			patch.domNode = domNode;
+			patch.eventNode = eventNode;
+
+			var data = patch.data;
+			if (typeof data !== 'undefined')
+			{
+				data.entry.data = domNode;
+				var subPatches = data.patches;
+				if (subPatches.length > 0)
+				{
+					addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+				}
+			}
+		}
 		else
 		{
 			patch.domNode = domNode;
@@ -6882,12 +7360,12 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 	{
 		case 'tagger':
 			var subNode = vNode.node;
-            
+
 			while (subNode.type === "tagger")
 			{
 				subNode = subNode.node;
 			}
-            
+
 			return addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
 
 		case 'node':
@@ -6897,6 +7375,26 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 			{
 				low++;
 				var vChild = vChildren[j];
+				var nextLow = low + (vChild.descendantsCount || 0);
+				if (low <= index && index <= nextLow)
+				{
+					i = addDomNodesHelp(childNodes[j], vChild, patches, i, low, nextLow, eventNode);
+					if (!(patch = patches[i]) || (index = patch.index) > high)
+					{
+						return i;
+					}
+				}
+				low = nextLow;
+			}
+			return i;
+
+		case 'keyed-node':
+			var vChildren = vNode.children;
+			var childNodes = domNode.childNodes;
+			for (var j = 0; j < vChildren.length; j++)
+			{
+				low++;
+				var vChild = vChildren[j]._1;
 				var nextLow = low + (vChild.descendantsCount || 0);
 				if (low <= index && index <= nextLow)
 				{
@@ -6969,7 +7467,7 @@ function applyPatch(domNode, patch)
 			domNode.elm_event_node_ref.tagger = patch.data;
 			return domNode;
 
-		case 'p-remove':
+		case 'p-remove-last':
 			var i = patch.data;
 			while (i--)
 			{
@@ -6977,12 +7475,80 @@ function applyPatch(domNode, patch)
 			}
 			return domNode;
 
-		case 'p-insert':
+		case 'p-append':
 			var newNodes = patch.data;
 			for (var i = 0; i < newNodes.length; i++)
 			{
 				domNode.appendChild(render(newNodes[i], patch.eventNode));
 			}
+			return domNode;
+
+		case 'p-remove':
+			var data = patch.data;
+			if (typeof data === 'undefined')
+			{
+				domNode.parentNode.removeChild(domNode);
+				return domNode;
+			}
+			var entry = data.entry;
+			if (typeof entry.index !== 'undefined')
+			{
+				domNode.parentNode.removeChild(domNode);
+			}
+			entry.data = applyPatchesHelp(domNode, data.patches);
+			return domNode;
+
+		case 'p-reorder':
+			var data = patch.data;
+
+			// end inserts
+			var endInserts = data.endInserts;
+			var end;
+			if (typeof endInserts !== 'undefined')
+			{
+				if (endInserts.length === 1)
+				{
+					var insert = endInserts[0];
+					var entry = insert.entry;
+					var end = entry.tag === 'move'
+						? entry.data
+						: render(entry.vnode, patch.eventNode);
+				}
+				else
+				{
+					end = document.createDocumentFragment();
+					for (var i = 0; i < endInserts.length; i++)
+					{
+						var insert = endInserts[i];
+						var entry = insert.entry;
+						var node = entry.tag === 'move'
+							? entry.data
+							: render(entry.vnode, patch.eventNode);
+						end.appendChild(node);
+					}
+				}
+			}
+
+			// removals
+			domNode = applyPatchesHelp(domNode, data.patches);
+
+			// inserts
+			var inserts = data.inserts;
+			for (var i = 0; i < inserts.length; i++)
+			{
+				var insert = inserts[i];
+				var entry = insert.entry;
+				var node = entry.tag === 'move'
+					? entry.data
+					: render(entry.vnode, patch.eventNode);
+				domNode.insertBefore(node, domNode.childNodes[insert.index]);
+			}
+
+			if (typeof end !== 'undefined')
+			{
+				domNode.appendChild(end);
+			}
+
 			return domNode;
 
 		case 'p-custom':
@@ -7046,12 +7612,14 @@ return {
 	lazy: F2(lazy),
 	lazy2: F3(lazy2),
 	lazy3: F4(lazy3),
+	keyedNode: F3(keyedNode),
 
 	programWithFlags: programWithFlags
 };
 
 }();
 var _elm_lang$virtual_dom$VirtualDom$programWithFlags = _elm_lang$virtual_dom$Native_VirtualDom.programWithFlags;
+var _elm_lang$virtual_dom$VirtualDom$keyedNode = _elm_lang$virtual_dom$Native_VirtualDom.keyedNode;
 var _elm_lang$virtual_dom$VirtualDom$lazy3 = _elm_lang$virtual_dom$Native_VirtualDom.lazy3;
 var _elm_lang$virtual_dom$VirtualDom$lazy2 = _elm_lang$virtual_dom$Native_VirtualDom.lazy2;
 var _elm_lang$virtual_dom$VirtualDom$lazy = _elm_lang$virtual_dom$Native_VirtualDom.lazy;
@@ -7219,6 +7787,36 @@ var _elm_lang$html$Html_Attributes$attribute = _elm_lang$virtual_dom$VirtualDom$
 var _elm_lang$html$Html_Attributes$contextmenu = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$attribute, 'contextmenu', value);
 };
+var _elm_lang$html$Html_Attributes$draggable = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'draggable', value);
+};
+var _elm_lang$html$Html_Attributes$list = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'list', value);
+};
+var _elm_lang$html$Html_Attributes$maxlength = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'maxlength',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$datetime = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'datetime', value);
+};
+var _elm_lang$html$Html_Attributes$pubdate = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'pubdate', value);
+};
+var _elm_lang$html$Html_Attributes$colspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'colspan',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$rowspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'rowspan',
+		_elm_lang$core$Basics$toString(n));
+};
 var _elm_lang$html$Html_Attributes$property = _elm_lang$virtual_dom$VirtualDom$property;
 var _elm_lang$html$Html_Attributes$stringProperty = F2(
 	function (name, string) {
@@ -7244,9 +7842,6 @@ var _elm_lang$html$Html_Attributes$accesskey = function ($char) {
 };
 var _elm_lang$html$Html_Attributes$dir = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dir', value);
-};
-var _elm_lang$html$Html_Attributes$draggable = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'draggable', value);
 };
 var _elm_lang$html$Html_Attributes$dropzone = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dropzone', value);
@@ -7347,19 +7942,10 @@ var _elm_lang$html$Html_Attributes$enctype = function (value) {
 var _elm_lang$html$Html_Attributes$formaction = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'formAction', value);
 };
-var _elm_lang$html$Html_Attributes$list = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'list', value);
-};
 var _elm_lang$html$Html_Attributes$minlength = function (n) {
 	return A2(
 		_elm_lang$html$Html_Attributes$stringProperty,
 		'minLength',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$maxlength = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'maxLength',
 		_elm_lang$core$Basics$toString(n));
 };
 var _elm_lang$html$Html_Attributes$method = function (value) {
@@ -7449,32 +8035,14 @@ var _elm_lang$html$Html_Attributes$ping = function (value) {
 var _elm_lang$html$Html_Attributes$rel = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'rel', value);
 };
-var _elm_lang$html$Html_Attributes$datetime = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'datetime', value);
-};
-var _elm_lang$html$Html_Attributes$pubdate = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'pubdate', value);
-};
 var _elm_lang$html$Html_Attributes$start = function (n) {
 	return A2(
 		_elm_lang$html$Html_Attributes$stringProperty,
 		'start',
 		_elm_lang$core$Basics$toString(n));
 };
-var _elm_lang$html$Html_Attributes$colspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'colSpan',
-		_elm_lang$core$Basics$toString(n));
-};
 var _elm_lang$html$Html_Attributes$headers = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'headers', value);
-};
-var _elm_lang$html$Html_Attributes$rowspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'rowSpan',
-		_elm_lang$core$Basics$toString(n));
 };
 var _elm_lang$html$Html_Attributes$scope = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'scope', value);
@@ -7667,6 +8235,176 @@ var _elm_lang$html$Html_Events$Options = F2(
 	function (a, b) {
 		return {stopPropagation: a, preventDefault: b};
 	});
+
+var _elm_lang$keyboard$Keyboard$onSelfMsg = F3(
+	function (router, _p0, state) {
+		var _p1 = _p0;
+		var _p2 = A2(_elm_lang$core$Dict$get, _p1.category, state);
+		if (_p2.ctor === 'Nothing') {
+			return _elm_lang$core$Task$succeed(state);
+		} else {
+			var send = function (tagger) {
+				return A2(
+					_elm_lang$core$Platform$sendToApp,
+					router,
+					tagger(_p1.keyCode));
+			};
+			return A2(
+				_elm_lang$core$Task$andThen,
+				_elm_lang$core$Task$sequence(
+					A2(_elm_lang$core$List$map, send, _p2._0.taggers)),
+				function (_p3) {
+					return _elm_lang$core$Task$succeed(state);
+				});
+		}
+	});
+var _elm_lang$keyboard$Keyboard_ops = _elm_lang$keyboard$Keyboard_ops || {};
+_elm_lang$keyboard$Keyboard_ops['&>'] = F2(
+	function (t1, t2) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			t1,
+			function (_p4) {
+				return t2;
+			});
+	});
+var _elm_lang$keyboard$Keyboard$init = _elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty);
+var _elm_lang$keyboard$Keyboard$categorizeHelpHelp = F2(
+	function (value, maybeValues) {
+		var _p5 = maybeValues;
+		if (_p5.ctor === 'Nothing') {
+			return _elm_lang$core$Maybe$Just(
+				_elm_lang$core$Native_List.fromArray(
+					[value]));
+		} else {
+			return _elm_lang$core$Maybe$Just(
+				A2(_elm_lang$core$List_ops['::'], value, _p5._0));
+		}
+	});
+var _elm_lang$keyboard$Keyboard$categorizeHelp = F2(
+	function (subs, subDict) {
+		categorizeHelp:
+		while (true) {
+			var _p6 = subs;
+			if (_p6.ctor === '[]') {
+				return subDict;
+			} else {
+				var _v4 = _p6._1,
+					_v5 = A3(
+					_elm_lang$core$Dict$update,
+					_p6._0._0,
+					_elm_lang$keyboard$Keyboard$categorizeHelpHelp(_p6._0._1),
+					subDict);
+				subs = _v4;
+				subDict = _v5;
+				continue categorizeHelp;
+			}
+		}
+	});
+var _elm_lang$keyboard$Keyboard$categorize = function (subs) {
+	return A2(_elm_lang$keyboard$Keyboard$categorizeHelp, subs, _elm_lang$core$Dict$empty);
+};
+var _elm_lang$keyboard$Keyboard$keyCode = A2(_elm_lang$core$Json_Decode_ops[':='], 'keyCode', _elm_lang$core$Json_Decode$int);
+var _elm_lang$keyboard$Keyboard$subscription = _elm_lang$core$Native_Platform.leaf('Keyboard');
+var _elm_lang$keyboard$Keyboard$Watcher = F2(
+	function (a, b) {
+		return {taggers: a, pid: b};
+	});
+var _elm_lang$keyboard$Keyboard$Msg = F2(
+	function (a, b) {
+		return {category: a, keyCode: b};
+	});
+var _elm_lang$keyboard$Keyboard$onEffects = F3(
+	function (router, newSubs, oldState) {
+		var rightStep = F3(
+			function (category, taggers, task) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					task,
+					function (state) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							_elm_lang$core$Process$spawn(
+								A3(
+									_elm_lang$dom$Dom_LowLevel$onDocument,
+									category,
+									_elm_lang$keyboard$Keyboard$keyCode,
+									function (_p7) {
+										return A2(
+											_elm_lang$core$Platform$sendToSelf,
+											router,
+											A2(_elm_lang$keyboard$Keyboard$Msg, category, _p7));
+									})),
+							function (pid) {
+								return _elm_lang$core$Task$succeed(
+									A3(
+										_elm_lang$core$Dict$insert,
+										category,
+										A2(_elm_lang$keyboard$Keyboard$Watcher, taggers, pid),
+										state));
+							});
+					});
+			});
+		var bothStep = F4(
+			function (category, _p8, taggers, task) {
+				var _p9 = _p8;
+				return A2(
+					_elm_lang$core$Task$andThen,
+					task,
+					function (state) {
+						return _elm_lang$core$Task$succeed(
+							A3(
+								_elm_lang$core$Dict$insert,
+								category,
+								A2(_elm_lang$keyboard$Keyboard$Watcher, taggers, _p9.pid),
+								state));
+					});
+			});
+		var leftStep = F3(
+			function (category, _p10, task) {
+				var _p11 = _p10;
+				return A2(
+					_elm_lang$keyboard$Keyboard_ops['&>'],
+					_elm_lang$core$Process$kill(_p11.pid),
+					task);
+			});
+		return A6(
+			_elm_lang$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			oldState,
+			_elm_lang$keyboard$Keyboard$categorize(newSubs),
+			_elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty));
+	});
+var _elm_lang$keyboard$Keyboard$MySub = F2(
+	function (a, b) {
+		return {ctor: 'MySub', _0: a, _1: b};
+	});
+var _elm_lang$keyboard$Keyboard$presses = function (tagger) {
+	return _elm_lang$keyboard$Keyboard$subscription(
+		A2(_elm_lang$keyboard$Keyboard$MySub, 'keypress', tagger));
+};
+var _elm_lang$keyboard$Keyboard$downs = function (tagger) {
+	return _elm_lang$keyboard$Keyboard$subscription(
+		A2(_elm_lang$keyboard$Keyboard$MySub, 'keydown', tagger));
+};
+var _elm_lang$keyboard$Keyboard$ups = function (tagger) {
+	return _elm_lang$keyboard$Keyboard$subscription(
+		A2(_elm_lang$keyboard$Keyboard$MySub, 'keyup', tagger));
+};
+var _elm_lang$keyboard$Keyboard$subMap = F2(
+	function (func, _p12) {
+		var _p13 = _p12;
+		return A2(
+			_elm_lang$keyboard$Keyboard$MySub,
+			_p13._0,
+			function (_p14) {
+				return func(
+					_p13._1(_p14));
+			});
+	});
+_elm_lang$core$Native_Platform.effectManagers['Keyboard'] = {pkg: 'elm-lang/keyboard', init: _elm_lang$keyboard$Keyboard$init, onEffects: _elm_lang$keyboard$Keyboard$onEffects, onSelfMsg: _elm_lang$keyboard$Keyboard$onSelfMsg, tag: 'sub', subMap: _elm_lang$keyboard$Keyboard$subMap};
 
 var _elm_lang$svg$Svg$text = _elm_lang$virtual_dom$VirtualDom$text;
 var _elm_lang$svg$Svg$svgNamespace = A2(
@@ -8608,9 +9346,6 @@ var _user$project$ParticipantQueue$get = F2(
 		return _elm_lang$core$List$head(
 			A2(_elm_lang$core$List$drop, n, list));
 	});
-var _user$project$ParticipantQueue$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$none;
-};
 var _user$project$ParticipantQueue$rotateQueue = function (participants) {
 	var _p1 = {
 		ctor: '_Tuple2',
@@ -8630,48 +9365,6 @@ var _user$project$ParticipantQueue$rotateQueue = function (participants) {
 		return participants;
 	}
 };
-var _user$project$ParticipantQueue$update = F2(
-	function (msg, model) {
-		var _p3 = msg;
-		switch (_p3.ctor) {
-			case 'Add':
-				var _p4 = _p3._0;
-				if (_p4.ctor === 'Just') {
-					var participants$ = A2(
-						_elm_lang$core$List$append,
-						model.participants,
-						_elm_lang$core$Native_List.fromArray(
-							[_p4._0]));
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{participants: participants$, fieldText: ''}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				} else {
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-				}
-			case 'FieldText':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{fieldText: _p3._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							participants: _user$project$ParticipantQueue$rotateQueue(model.participants)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-		}
-	});
 var _user$project$ParticipantQueue$init = {
 	participants: _elm_lang$core$Native_List.fromArray(
 		[]),
@@ -8681,6 +9374,12 @@ var _user$project$ParticipantQueue$Model = F2(
 	function (a, b) {
 		return {participants: a, fieldText: b};
 	});
+var _user$project$ParticipantQueue$KeyDown = function (a) {
+	return {ctor: 'KeyDown', _0: a};
+};
+var _user$project$ParticipantQueue$subscriptions = function (model) {
+	return _elm_lang$keyboard$Keyboard$downs(_user$project$ParticipantQueue$KeyDown);
+};
 var _user$project$ParticipantQueue$Next = {ctor: 'Next'};
 var _user$project$ParticipantQueue$nextButton = A2(
 	_elm_lang$html$Html$button,
@@ -8719,6 +9418,63 @@ var _user$project$ParticipantQueue$nameInput = function (fieldText) {
 var _user$project$ParticipantQueue$Add = function (a) {
 	return {ctor: 'Add', _0: a};
 };
+var _user$project$ParticipantQueue$update = F2(
+	function (msg, model) {
+		update:
+		while (true) {
+			var _p3 = msg;
+			switch (_p3.ctor) {
+				case 'KeyDown':
+					var _p4 = _p3._0;
+					if (_p4 === 13) {
+						var _v4 = _user$project$ParticipantQueue$Add(
+							_user$project$ParticipantQueue$validInput(model.fieldText)),
+							_v5 = model;
+						msg = _v4;
+						model = _v5;
+						continue update;
+					} else {
+						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+					}
+				case 'Add':
+					var _p5 = _p3._0;
+					if (_p5.ctor === 'Just') {
+						var participants$ = A2(
+							_elm_lang$core$List$append,
+							model.participants,
+							_elm_lang$core$Native_List.fromArray(
+								[_p5._0]));
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{participants: participants$, fieldText: ''}),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
+					} else {
+						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+					}
+				case 'FieldText':
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{fieldText: _p3._0}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				default:
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								participants: _user$project$ParticipantQueue$rotateQueue(model.participants)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+			}
+		}
+	});
 var _user$project$ParticipantQueue$add = function (fieldText) {
 	return A2(
 		_elm_lang$html$Html$div,
