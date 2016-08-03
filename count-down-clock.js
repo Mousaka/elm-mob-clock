@@ -9617,7 +9617,11 @@ var _user$project$Main$subscriptions = function (model) {
 				A2(
 				_elm_lang$core$Platform_Sub$map,
 				_user$project$Main$Clock,
-				_user$project$CountdownClock$subscriptions(model.countdownClock))
+				_user$project$CountdownClock$subscriptions(model.countdownClock)),
+				A2(
+				_elm_lang$core$Platform_Sub$map,
+				_user$project$Main$Queue,
+				_user$project$ParticipantQueue$subscriptions(model.queue))
 			]));
 };
 var _user$project$Main$view = function (model) {

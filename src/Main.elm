@@ -82,7 +82,8 @@ updateClockWithQueueRoation msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-  [ Sub.map Clock (CountdownClock.subscriptions model.countdownClock) ]
+  [ Sub.map Clock (CountdownClock.subscriptions model.countdownClock)
+  , Sub.map Queue (ParticipantQueue.subscriptions model.queue) ]
 
 
 -- VIEW
