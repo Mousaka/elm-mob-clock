@@ -1,4 +1,4 @@
-import CountdownClock exposing (..)
+import Clock exposing (..)
 import ParticipantQueue exposing (..)
 import Styling exposing (..)
 import Html.App as Html
@@ -20,13 +20,13 @@ main =
 
 
 type alias Model =
-  { countdownClock : CountdownClock.Model
+  { countdownClock : Clock.Model
   , queue : ParticipantQueue.Model
   }
 
 init : (Model, Cmd Msg)
 init =
-  ({countdownClock = CountdownClock.init
+  ({countdownClock = Clock.init
   , queue = ParticipantQueue.init}, Cmd.none)
 
 
@@ -35,7 +35,7 @@ init =
 
 
 type Msg
-  = Clock CountdownClock.Msg
+  = Clock Clock.Msg
   | Queue ParticipantQueue.Msg
 
 
@@ -49,7 +49,7 @@ update message model =
         _ ->
           let
             (newClockModel, clockCmds) =
-              CountdownClock.update msg model.countdownClock
+              Clock.update msg model.countdownClock
           in
             ( { model | countdownClock = newClockModel}, Cmd.map Clock clockCmds )
 
@@ -61,14 +61,14 @@ update message model =
         ( { model | queue = newQueueState}, Cmd.map Queue queueCmds )
 
 
-updateClockWithQueueRoation : CountdownClock.Msg -> Model -> ( Model, Cmd Msg )
+updateClockWithQueueRoation : Clock.Msg -> Model -> ( Model, Cmd Msg )
 updateClockWithQueueRoation msg model =
   let
     (queueModel, queuecmd) =
       ParticipantQueue.update Next model.queue
 
     (newClockModel, clockCmds) =
-      CountdownClock.update msg model.countdownClock
+      Clock.update msg model.countdownClock
 
     mappedClockCmds = Cmd.map Clock clockCmds
 
@@ -82,7 +82,7 @@ updateClockWithQueueRoation msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-  [ Sub.map Clock (CountdownClock.subscriptions model.countdownClock)
+  [ Sub.map Clock (Clock.subscriptions model.countdownClock)
   , Sub.map Queue (ParticipantQueue.subscriptions model.queue) ]
 
 
@@ -93,6 +93,6 @@ view : Model -> Html Msg
 view model =
   div
     [flexMiddle]
-    [ Html.map Clock (CountdownClock.view model.countdownClock)
+    [ Html.map Clock (Clock.view model.countdownClock)
     , Html.map Queue (ParticipantQueue.view model.queue)
     ]

@@ -1,4 +1,4 @@
-port module CountdownClock exposing ( Model, Msg(Start, Reset), init, update, view, subscriptions )
+port module Clock exposing ( Model, Msg(Start, Reset), init, update, view, subscriptions )
 import Styling exposing (..)
 import Util exposing (toMinSec)
 import Html exposing (Html, div, button, input, Attribute)
