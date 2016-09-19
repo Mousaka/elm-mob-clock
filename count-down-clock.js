@@ -8876,11 +8876,11 @@ var _user$project$Util$toMinSec = function (textTime) {
 	return _elm_lang$core$Maybe$Nothing;
 };
 
-var _user$project$CountdownClock$angleHelper = F2(
+var _user$project$Clock$angleHelper = F2(
 	function (speed, seconds) {
 		return ((_elm_lang$core$Basics$pi * 2) * (_elm_lang$core$Basics$toFloat(seconds) / speed)) - (_elm_lang$core$Basics$pi / 2);
 	});
-var _user$project$CountdownClock$clockHandle = F2(
+var _user$project$Clock$clockHandle = F2(
 	function (coords, colour) {
 		var _p0 = coords;
 		var x = _p0._0;
@@ -8900,14 +8900,14 @@ var _user$project$CountdownClock$clockHandle = F2(
 			_elm_lang$core$Native_List.fromArray(
 				[]));
 	});
-var _user$project$CountdownClock$clock = function (time) {
-	var minutesAngle = A2(_user$project$CountdownClock$angleHelper, 60 * 60, time);
+var _user$project$Clock$clock = function (time) {
+	var minutesAngle = A2(_user$project$Clock$angleHelper, 60 * 60, time);
 	var minutesHandlerTip = {
 		ctor: '_Tuple2',
 		_0: 50 + (38 * _elm_lang$core$Basics$cos(minutesAngle)),
 		_1: 50 + (38 * _elm_lang$core$Basics$sin(minutesAngle))
 	};
-	var secondsAngle = A2(_user$project$CountdownClock$angleHelper, 60, time);
+	var secondsAngle = A2(_user$project$Clock$angleHelper, 60, time);
 	var secondHandlerTip = {
 		ctor: '_Tuple2',
 		_0: 50 + (40 * _elm_lang$core$Basics$cos(secondsAngle)),
@@ -8933,11 +8933,11 @@ var _user$project$CountdownClock$clock = function (time) {
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[])),
-				A2(_user$project$CountdownClock$clockHandle, minutesHandlerTip, '#000000'),
-				A2(_user$project$CountdownClock$clockHandle, secondHandlerTip, '#F0F8FF')
+				A2(_user$project$Clock$clockHandle, minutesHandlerTip, '#000000'),
+				A2(_user$project$Clock$clockHandle, secondHandlerTip, '#F0F8FF')
 			]));
 };
-var _user$project$CountdownClock$displayTimer = function (displayableTime) {
+var _user$project$Clock$displayTimer = function (displayableTime) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8947,7 +8947,7 @@ var _user$project$CountdownClock$displayTimer = function (displayableTime) {
 				_elm_lang$svg$Svg$text(displayableTime)
 			]));
 };
-var _user$project$CountdownClock$statusText = function (clockState) {
+var _user$project$Clock$statusText = function (clockState) {
 	var _p1 = clockState;
 	if (_p1.ctor === 'Finished') {
 		return 'Time is up!';
@@ -8955,7 +8955,7 @@ var _user$project$CountdownClock$statusText = function (clockState) {
 		return '';
 	}
 };
-var _user$project$CountdownClock$displayUnitsOfTime = function (time) {
+var _user$project$Clock$displayUnitsOfTime = function (time) {
 	var unitsToDisplay = _elm_lang$core$Basics$toString(time);
 	var _p2 = _elm_lang$core$String$length(unitsToDisplay);
 	if (_p2 === 1) {
@@ -8964,65 +8964,65 @@ var _user$project$CountdownClock$displayUnitsOfTime = function (time) {
 		return unitsToDisplay;
 	}
 };
-var _user$project$CountdownClock$displaySec = function (t) {
-	return _user$project$CountdownClock$displayUnitsOfTime(
+var _user$project$Clock$displaySec = function (t) {
+	return _user$project$Clock$displayUnitsOfTime(
 		A2(_elm_lang$core$Basics_ops['%'], t, 60));
 };
-var _user$project$CountdownClock$displayMin = function (t) {
-	return _user$project$CountdownClock$displayUnitsOfTime((t / 60) | 0);
+var _user$project$Clock$displayMin = function (t) {
+	return _user$project$Clock$displayUnitsOfTime((t / 60) | 0);
 };
-var _user$project$CountdownClock$displayTime = function (time) {
+var _user$project$Clock$displayTime = function (time) {
 	return A2(
 		_elm_lang$core$Basics_ops['++'],
-		_user$project$CountdownClock$displayMin(time),
+		_user$project$Clock$displayMin(time),
 		A2(
 			_elm_lang$core$Basics_ops['++'],
 			':',
-			_user$project$CountdownClock$displaySec(time)));
+			_user$project$Clock$displaySec(time)));
 };
-var _user$project$CountdownClock$alarm = _elm_lang$core$Native_Platform.outgoingPort(
+var _user$project$Clock$alarm = _elm_lang$core$Native_Platform.outgoingPort(
 	'alarm',
 	function (v) {
 		return null;
 	});
-var _user$project$CountdownClock$Model = F3(
+var _user$project$Clock$Model = F3(
 	function (a, b, c) {
 		return {time: a, resetTime: b, clockState: c};
 	});
-var _user$project$CountdownClock$Finished = {ctor: 'Finished'};
-var _user$project$CountdownClock$Paused = {ctor: 'Paused'};
-var _user$project$CountdownClock$Running = {ctor: 'Running'};
-var _user$project$CountdownClock$Stopped = {ctor: 'Stopped'};
-var _user$project$CountdownClock$init = {time: 60 * 10, resetTime: 60 * 10, clockState: _user$project$CountdownClock$Stopped};
-var _user$project$CountdownClock$SetTimer = function (a) {
+var _user$project$Clock$Finished = {ctor: 'Finished'};
+var _user$project$Clock$Paused = {ctor: 'Paused'};
+var _user$project$Clock$Running = {ctor: 'Running'};
+var _user$project$Clock$Stopped = {ctor: 'Stopped'};
+var _user$project$Clock$init = {time: 60 * 10, resetTime: 60 * 10, clockState: _user$project$Clock$Stopped};
+var _user$project$Clock$SetTimer = function (a) {
 	return {ctor: 'SetTimer', _0: a};
 };
-var _user$project$CountdownClock$timerInput = function (currentTime) {
+var _user$project$Clock$timerInput = function (currentTime) {
 	return A2(
 		_elm_lang$html$Html$input,
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_elm_lang$html$Html_Attributes$placeholder(currentTime),
-				_elm_lang$html$Html_Events$onInput(_user$project$CountdownClock$SetTimer),
+				_elm_lang$html$Html_Events$onInput(_user$project$Clock$SetTimer),
 				_user$project$Styling$myStyle
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[]));
 };
-var _user$project$CountdownClock$inputOrDisplayTime = function (clockState) {
+var _user$project$Clock$inputOrDisplayTime = function (clockState) {
 	var _p3 = clockState;
 	switch (_p3.ctor) {
 		case 'Paused':
-			return _user$project$CountdownClock$displayTimer;
+			return _user$project$Clock$displayTimer;
 		case 'Running':
-			return _user$project$CountdownClock$displayTimer;
+			return _user$project$Clock$displayTimer;
 		default:
-			return _user$project$CountdownClock$timerInput;
+			return _user$project$Clock$timerInput;
 	}
 };
-var _user$project$CountdownClock$SoundAlarm = {ctor: 'SoundAlarm'};
-var _user$project$CountdownClock$Finish = {ctor: 'Finish'};
-var _user$project$CountdownClock$update = F2(
+var _user$project$Clock$SoundAlarm = {ctor: 'SoundAlarm'};
+var _user$project$Clock$Finish = {ctor: 'Finish'};
+var _user$project$Clock$update = F2(
 	function (msg, model) {
 		update:
 		while (true) {
@@ -9032,7 +9032,7 @@ var _user$project$CountdownClock$update = F2(
 					var _p5 = model.time;
 					switch (_p5) {
 						case 1:
-							var _v5 = _user$project$CountdownClock$SoundAlarm,
+							var _v5 = _user$project$Clock$SoundAlarm,
 								_v6 = _elm_lang$core$Native_Utils.update(
 								model,
 								{time: model.time - 1});
@@ -9040,7 +9040,7 @@ var _user$project$CountdownClock$update = F2(
 							model = _v6;
 							continue update;
 						case 0:
-							var _v7 = _user$project$CountdownClock$Finish,
+							var _v7 = _user$project$Clock$Finish,
 								_v8 = model;
 							msg = _v7;
 							model = _v8;
@@ -9059,7 +9059,7 @@ var _user$project$CountdownClock$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{clockState: _user$project$CountdownClock$Running}),
+							{clockState: _user$project$Clock$Running}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'Reset':
@@ -9067,7 +9067,7 @@ var _user$project$CountdownClock$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{clockState: _user$project$CountdownClock$Stopped, time: model.resetTime}),
+							{clockState: _user$project$Clock$Stopped, time: model.resetTime}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'Pause':
@@ -9075,7 +9075,7 @@ var _user$project$CountdownClock$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{clockState: _user$project$CountdownClock$Paused}),
+							{clockState: _user$project$Clock$Paused}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'Unpause':
@@ -9083,7 +9083,7 @@ var _user$project$CountdownClock$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{clockState: _user$project$CountdownClock$Running}),
+							{clockState: _user$project$Clock$Running}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'Finish':
@@ -9091,14 +9091,14 @@ var _user$project$CountdownClock$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{clockState: _user$project$CountdownClock$Finished}),
+							{clockState: _user$project$Clock$Finished}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'SoundAlarm':
 					return {
 						ctor: '_Tuple2',
 						_0: model,
-						_1: _user$project$CountdownClock$alarm(
+						_1: _user$project$Clock$alarm(
 							{ctor: '_Tuple0'})
 					};
 				default:
@@ -9118,10 +9118,10 @@ var _user$project$CountdownClock$update = F2(
 			}
 		}
 	});
-var _user$project$CountdownClock$Unpause = {ctor: 'Unpause'};
-var _user$project$CountdownClock$Pause = {ctor: 'Pause'};
-var _user$project$CountdownClock$Reset = {ctor: 'Reset'};
-var _user$project$CountdownClock$resetB = function (clockState) {
+var _user$project$Clock$Unpause = {ctor: 'Unpause'};
+var _user$project$Clock$Pause = {ctor: 'Pause'};
+var _user$project$Clock$Reset = {ctor: 'Reset'};
+var _user$project$Clock$resetB = function (clockState) {
 	var _p8 = clockState;
 	switch (_p8.ctor) {
 		case 'Paused':
@@ -9129,7 +9129,7 @@ var _user$project$CountdownClock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Reset),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
 						_user$project$Styling$myButton
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9141,7 +9141,7 @@ var _user$project$CountdownClock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Reset),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
 						_user$project$Styling$myButton
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9153,7 +9153,7 @@ var _user$project$CountdownClock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Reset),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
 						_elm_lang$html$Html_Attributes$hidden(true),
 						_user$project$Styling$myButton
 					]),
@@ -9163,8 +9163,8 @@ var _user$project$CountdownClock$resetB = function (clockState) {
 					]));
 	}
 };
-var _user$project$CountdownClock$Start = {ctor: 'Start'};
-var _user$project$CountdownClock$startPauseResumeB = function (clockState) {
+var _user$project$Clock$Start = {ctor: 'Start'};
+var _user$project$Clock$startPauseResumeB = function (clockState) {
 	var _p9 = clockState;
 	switch (_p9.ctor) {
 		case 'Paused':
@@ -9172,7 +9172,7 @@ var _user$project$CountdownClock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Unpause),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Unpause),
 						_user$project$Styling$myButton
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9184,7 +9184,7 @@ var _user$project$CountdownClock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Pause),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Pause),
 						_user$project$Styling$myButton
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9206,7 +9206,7 @@ var _user$project$CountdownClock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$CountdownClock$Start),
+						_elm_lang$html$Html_Events$onClick(_user$project$Clock$Start),
 						_user$project$Styling$myButton
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9215,14 +9215,14 @@ var _user$project$CountdownClock$startPauseResumeB = function (clockState) {
 					]));
 	}
 };
-var _user$project$CountdownClock$view = function (model) {
-	var resetButton = _user$project$CountdownClock$resetB(model.clockState);
-	var startPauseResumeButton = _user$project$CountdownClock$startPauseResumeB(model.clockState);
+var _user$project$Clock$view = function (model) {
+	var resetButton = _user$project$Clock$resetB(model.clockState);
+	var startPauseResumeButton = _user$project$Clock$startPauseResumeB(model.clockState);
 	var timeField = A2(
-		_user$project$CountdownClock$inputOrDisplayTime,
+		_user$project$Clock$inputOrDisplayTime,
 		model.clockState,
-		_user$project$CountdownClock$displayTime(model.time));
-	var message = _user$project$CountdownClock$statusText(model.clockState);
+		_user$project$Clock$displayTime(model.time));
+	var message = _user$project$Clock$statusText(model.clockState);
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -9235,7 +9235,7 @@ var _user$project$CountdownClock$view = function (model) {
 					[_user$project$Styling$flexMiddle]),
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_user$project$CountdownClock$clock(model.time)
+						_user$project$Clock$clock(model.time)
 					])),
 				A2(
 				_elm_lang$html$Html$div,
@@ -9259,28 +9259,28 @@ var _user$project$CountdownClock$view = function (model) {
 					[startPauseResumeButton, resetButton]))
 			]));
 };
-var _user$project$CountdownClock$Tick = function (a) {
+var _user$project$Clock$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
-var _user$project$CountdownClock$subscriptions = function (model) {
+var _user$project$Clock$subscriptions = function (model) {
 	var _p10 = model.clockState;
 	if (_p10.ctor === 'Running') {
-		return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$CountdownClock$Tick);
+		return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
 	} else {
 		return _elm_lang$core$Platform_Sub$none;
 	}
 };
-var _user$project$CountdownClock$main = {
+var _user$project$Clock$main = {
 	main: _elm_lang$html$Html_App$program(
 		{
 			init: A2(
 				_elm_lang$core$Platform_Cmd_ops['!'],
-				_user$project$CountdownClock$init,
+				_user$project$Clock$init,
 				_elm_lang$core$Native_List.fromArray(
 					[])),
-			view: _user$project$CountdownClock$view,
-			update: _user$project$CountdownClock$update,
-			subscriptions: _user$project$CountdownClock$subscriptions
+			view: _user$project$Clock$view,
+			update: _user$project$Clock$update,
+			subscriptions: _user$project$Clock$subscriptions
 		})
 };
 
@@ -9550,7 +9550,7 @@ var _user$project$ParticipantQueue$main = {
 
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
-	_0: {countdownClock: _user$project$CountdownClock$init, queue: _user$project$ParticipantQueue$init},
+	_0: {countdownClock: _user$project$Clock$init, queue: _user$project$ParticipantQueue$init},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _user$project$Main$Model = F2(
@@ -9565,7 +9565,7 @@ var _user$project$Main$Clock = function (a) {
 };
 var _user$project$Main$updateClockWithQueueRoation = F2(
 	function (msg, model) {
-		var _p0 = A2(_user$project$CountdownClock$update, msg, model.countdownClock);
+		var _p0 = A2(_user$project$Clock$update, msg, model.countdownClock);
 		var newClockModel = _p0._0;
 		var clockCmds = _p0._1;
 		var mappedClockCmds = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds);
@@ -9586,7 +9586,7 @@ var _user$project$Main$update = F2(
 			if (_p3.ctor === 'Reset') {
 				return A2(_user$project$Main$updateClockWithQueueRoation, _p5, model);
 			} else {
-				var _p4 = A2(_user$project$CountdownClock$update, _p5, model.countdownClock);
+				var _p4 = A2(_user$project$Clock$update, _p5, model.countdownClock);
 				var newClockModel = _p4._0;
 				var clockCmds = _p4._1;
 				return {
@@ -9617,7 +9617,7 @@ var _user$project$Main$subscriptions = function (model) {
 				A2(
 				_elm_lang$core$Platform_Sub$map,
 				_user$project$Main$Clock,
-				_user$project$CountdownClock$subscriptions(model.countdownClock)),
+				_user$project$Clock$subscriptions(model.countdownClock)),
 				A2(
 				_elm_lang$core$Platform_Sub$map,
 				_user$project$Main$Queue,
@@ -9634,7 +9634,7 @@ var _user$project$Main$view = function (model) {
 				A2(
 				_elm_lang$html$Html_App$map,
 				_user$project$Main$Clock,
-				_user$project$CountdownClock$view(model.countdownClock)),
+				_user$project$Clock$view(model.countdownClock)),
 				A2(
 				_elm_lang$html$Html_App$map,
 				_user$project$Main$Queue,
