@@ -8918,7 +8918,7 @@ var _user$project$Clock$clock = function (time) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_elm_lang$svg$Svg_Attributes$viewBox('0 0 100 100'),
-				_elm_lang$svg$Svg_Attributes$width('300px')
+				_elm_lang$svg$Svg_Attributes$width('250px')
 			]),
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -9391,6 +9391,74 @@ var _user$project$ParticipantQueue$nextButton = A2(
 		[
 			_elm_lang$html$Html$text('Next')
 		]));
+var _user$project$ParticipantQueue$rotate = A2(
+	_elm_lang$html$Html$div,
+	_elm_lang$core$Native_List.fromArray(
+		[]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$svg$Svg$svg,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$svg$Svg_Attributes$viewBox('0 0 90 90'),
+					_elm_lang$svg$Svg_Attributes$width('35px'),
+					_elm_lang$svg$Svg_Attributes$height('35px'),
+					_elm_lang$html$Html_Events$onClick(_user$project$ParticipantQueue$Next)
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$svg$Svg$circle,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$svg$Svg_Attributes$cx('50'),
+							_elm_lang$svg$Svg_Attributes$cy('50'),
+							_elm_lang$svg$Svg_Attributes$r('30'),
+							_elm_lang$svg$Svg_Attributes$stroke('#0B79CE'),
+							_elm_lang$svg$Svg_Attributes$strokeWidth('18'),
+							_elm_lang$svg$Svg_Attributes$fill('none')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					A2(
+					_elm_lang$svg$Svg$rect,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$svg$Svg_Attributes$x('0'),
+							_elm_lang$svg$Svg_Attributes$y('40'),
+							_elm_lang$svg$Svg_Attributes$width('100'),
+							_elm_lang$svg$Svg_Attributes$height('20'),
+							_elm_lang$svg$Svg_Attributes$fill('white')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					A2(
+					_elm_lang$svg$Svg$rect,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$svg$Svg_Attributes$x('13'),
+							_elm_lang$svg$Svg_Attributes$y('26'),
+							_elm_lang$svg$Svg_Attributes$width('20'),
+							_elm_lang$svg$Svg_Attributes$height('20'),
+							_elm_lang$svg$Svg_Attributes$fill('#0B79CE')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					A2(
+					_elm_lang$svg$Svg$rect,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$svg$Svg_Attributes$x('68'),
+							_elm_lang$svg$Svg_Attributes$y('55'),
+							_elm_lang$svg$Svg_Attributes$width('20'),
+							_elm_lang$svg$Svg_Attributes$height('20'),
+							_elm_lang$svg$Svg_Attributes$fill('#0B79CE')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[]))
+				]))
+		]));
 var _user$project$ParticipantQueue$FieldText = function (a) {
 	return {ctor: 'FieldText', _0: a};
 };
@@ -9530,6 +9598,7 @@ var _user$project$ParticipantQueue$view = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_user$project$ParticipantQueue$displayParticipants(model.participants),
+				_user$project$ParticipantQueue$rotate,
 				_user$project$ParticipantQueue$nameInput(model.fieldText),
 				_user$project$ParticipantQueue$add(model.fieldText)
 			]));

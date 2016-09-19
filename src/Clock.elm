@@ -264,7 +264,7 @@ clock time =
         minutesHandlerTip =
             ( 50 + 38 * cos minutesAngle, 50 + 38 * sin minutesAngle )
     in
-        svg [ viewBox "0 0 100 100", Svg.Attributes.width "300px" ]
+        svg [ viewBox "0 0 100 100", Svg.Attributes.width "250px" ]
             [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
             , clockHandle minutesHandlerTip "#000000"
             , clockHandle secondHandlerTip "#F0F8FF"
