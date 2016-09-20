@@ -162,15 +162,17 @@ add fieldText =
             ]
         ]
 
+
 rotate : Html Msg
-rotate  =
-  div []
+rotate =
+    div []
         [ svg [ viewBox "0 0 90 90", Svg.Attributes.width "35px", Svg.Attributes.height "35px", onClick Next ]
-          [ circle [ cx "50", cy "50", r "30", stroke "#0B79CE", strokeWidth "18", fill "none" ][]
-          , rect [ x "0", y "40", Svg.Attributes.width "100", Svg.Attributes.height "20", fill "white" ] []
-          , rect [ x "13", y "26", Svg.Attributes.width "20", Svg.Attributes.height "20", fill "#0B79CE"] []
-          , rect [ x "68", y "55", Svg.Attributes.width "20", Svg.Attributes.height "20", fill "#0B79CE"] []
-        ]]
+            [ circle [ cx "50", cy "50", r "30", stroke "#0B79CE", strokeWidth "18", fill "none" ] []
+            , rect [ x "0", y "40", Svg.Attributes.width "100", Svg.Attributes.height "20", fill "white" ] []
+            , rect [ x "13", y "26", Svg.Attributes.width "20", Svg.Attributes.height "20", fill "#0B79CE" ] []
+            , rect [ x "68", y "55", Svg.Attributes.width "20", Svg.Attributes.height "20", fill "#0B79CE" ] []
+            ]
+        ]
 
 
 validInput : String -> Maybe String
