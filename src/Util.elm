@@ -1,6 +1,7 @@
-module Util exposing (toMinSec)
+module Util exposing (toMinSec, removeNonNumerals)
 
-import String exposing (slice, right)
+import String exposing (slice, right, filter)
+import Char exposing (isDigit)
 
 
 -- UTIL
@@ -10,6 +11,16 @@ import String exposing (slice, right)
 
 toMinSec : String -> Maybe Int
 toMinSec textTime =
+    textTime |> removeNonNumerals |> numSlicer
+
+
+removeNonNumerals : String -> String
+removeNonNumerals =
+    filter isDigit
+
+
+numSlicer : String -> Maybe Int
+numSlicer textTime =
     let
         mins =
             slice -4 -2 textTime

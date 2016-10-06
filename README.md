@@ -16,3 +16,5 @@ To build:
 * `elm-package install`
 * `elm make src/Main.elm --output=count-down-clock.js`
 
+last build step can be replaced with the following if you `chmod` build file first (unix)
+* `./build`
