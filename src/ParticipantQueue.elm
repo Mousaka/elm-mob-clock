@@ -2,7 +2,7 @@ module ParticipantQueue exposing (Model, Msg(Next), init, update, view, subscrip
 
 import Styling exposing (..)
 import Html exposing (Html, div, button, input, Attribute)
-import Html.App as Html
+import Html exposing (program)
 import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -13,7 +13,7 @@ import Svg.Attributes exposing (..)
 import Keyboard
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
     Html.program
         { init = init ! []
@@ -64,10 +64,10 @@ update msg model =
             case participant of
                 Just name ->
                     let
-                        participants' =
+                        participants_ =
                             List.append model.participants [ name ]
                     in
-                        ( { model | participants = participants', fieldText = "" }, Cmd.none )
+                        ( { model | participants = participants_, fieldText = "" }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )

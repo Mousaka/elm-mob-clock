@@ -3,11 +3,11 @@ module Main exposing (..)
 import Clock exposing (..)
 import ParticipantQueue exposing (..)
 import Styling exposing (..)
-import Html.App as Html
+import Html exposing (program)
 import Html exposing (Html, button, div, text)
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
     Html.program
         { init = init
@@ -80,10 +80,10 @@ updateClockWithQueueRoation msg model =
         mappedClockCmds =
             Cmd.map Clock clockCmds
 
-        model' =
+        model_ =
             { model | queue = queueModel, countdownClock = newClockModel }
     in
-        ( model', mappedClockCmds )
+        ( model_, mappedClockCmds )
 
 
 

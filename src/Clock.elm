@@ -4,7 +4,7 @@ import Styling exposing (..)
 import Util exposing (toMinSec)
 import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
-import Html.App as Html
+import Html exposing (program)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import Svg exposing (..)
@@ -13,9 +13,9 @@ import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Html.program
+    program
         { init = init ! []
         , view = view
         , update = update

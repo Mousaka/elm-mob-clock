@@ -17,9 +17,6 @@
   var app = Elm.Main.embed(elmDiv);
   app.ports.alarm.subscribe(function() {
     document.getElementById('alarm').play();
-    setTimeout(function(){
-      document.getElementById('alarm').play();
-    }, 4000);
  });
 </script>
 

@@ -14,6 +14,7 @@ myStyle =
             [ ( "width", "170px" )
             , ( "height", "30px" )
             , ( "padding", "10px 0" )
+            , ( "padding", "10px 0" )
             ]
 
 
