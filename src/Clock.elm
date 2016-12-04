@@ -1,4 +1,4 @@
-port module Clock exposing (Model, Msg(Start, Reset), init, update, view, subscriptions)
+port module Clock exposing (Model, Msg(Start, Finish), init, update, view, subscriptions)
 
 import Styling exposing (..)
 import Util exposing (toMinSec)
@@ -11,6 +11,7 @@ import Svg exposing (..)
 import String exposing (toFloat, slice, right, length)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
+import Task exposing (perform, succeed)
 
 
 main : Program Never Model Msg
@@ -68,6 +69,11 @@ type Msg
 -- UPDATE
 
 
+finishCmd : Task.Task Never Msg
+finishCmd =
+    succeed Finish
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -77,7 +83,7 @@ update msg model =
                     update SoundAlarm ({ model | time = model.time - 1 })
 
                 0 ->
-                    update Finish model
+                    ( model, Task.perform (\_ -> Finish) finishCmd )
 
                 _ ->
                     ( { model | time = model.time - 1 }, Cmd.none )

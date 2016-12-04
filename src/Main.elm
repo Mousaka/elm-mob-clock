@@ -50,7 +50,7 @@ update message model =
     case message of
         Clock msg ->
             case msg of
-                Reset ->
+                Finish ->
                     updateClockWithQueueRoation msg model
 
                 _ ->

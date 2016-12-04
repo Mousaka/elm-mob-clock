@@ -9762,6 +9762,7 @@ var _user$project$Clock$inputOrDisplayTime = function (clockState) {
 };
 var _user$project$Clock$SoundAlarm = {ctor: 'SoundAlarm'};
 var _user$project$Clock$Finish = {ctor: 'Finish'};
+var _user$project$Clock$finishCmd = _elm_lang$core$Task$succeed(_user$project$Clock$Finish);
 var _user$project$Clock$update = F2(
 	function (msg, model) {
 		update:
@@ -9780,11 +9781,16 @@ var _user$project$Clock$update = F2(
 							model = _v6;
 							continue update;
 						case 0:
-							var _v7 = _user$project$Clock$Finish,
-								_v8 = model;
-							msg = _v7;
-							model = _v8;
-							continue update;
+							return {
+								ctor: '_Tuple2',
+								_0: model,
+								_1: A2(
+									_elm_lang$core$Task$perform,
+									function (_p6) {
+										return _user$project$Clock$Finish;
+									},
+									_user$project$Clock$finishCmd)
+							};
 						default:
 							return {
 								ctor: '_Tuple2',
@@ -9842,14 +9848,14 @@ var _user$project$Clock$update = F2(
 							{ctor: '_Tuple0'})
 					};
 				default:
-					var _p6 = _user$project$Util$toMinSec(_p4._0);
-					if (_p6.ctor === 'Just') {
-						var _p7 = _p6._0;
+					var _p7 = _user$project$Util$toMinSec(_p4._0);
+					if (_p7.ctor === 'Just') {
+						var _p8 = _p7._0;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								model,
-								{resetTime: _p7, time: _p7}),
+								{resetTime: _p8, time: _p8}),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 					} else {
@@ -9862,8 +9868,8 @@ var _user$project$Clock$Unpause = {ctor: 'Unpause'};
 var _user$project$Clock$Pause = {ctor: 'Pause'};
 var _user$project$Clock$Reset = {ctor: 'Reset'};
 var _user$project$Clock$resetB = function (clockState) {
-	var _p8 = clockState;
-	switch (_p8.ctor) {
+	var _p9 = clockState;
+	switch (_p9.ctor) {
 		case 'Paused':
 			return A2(
 				_elm_lang$html$Html$button,
@@ -9923,8 +9929,8 @@ var _user$project$Clock$resetB = function (clockState) {
 };
 var _user$project$Clock$Start = {ctor: 'Start'};
 var _user$project$Clock$startPauseResumeB = function (clockState) {
-	var _p9 = clockState;
-	switch (_p9.ctor) {
+	var _p10 = clockState;
+	switch (_p10.ctor) {
 		case 'Paused':
 			return A2(
 				_elm_lang$html$Html$button,
@@ -10072,8 +10078,8 @@ var _user$project$Clock$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
 var _user$project$Clock$subscriptions = function (model) {
-	var _p10 = model.clockState;
-	if (_p10.ctor === 'Running') {
+	var _p11 = model.clockState;
+	if (_p11.ctor === 'Running') {
 		return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
 	} else {
 		return _elm_lang$core$Platform_Sub$none;
@@ -10612,7 +10618,7 @@ var _user$project$Main$update = F2(
 		if (_p2.ctor === 'Clock') {
 			var _p5 = _p2._0;
 			var _p3 = _p5;
-			if (_p3.ctor === 'Reset') {
+			if (_p3.ctor === 'Finish') {
 				return A2(_user$project$Main$updateClockWithQueueRoation, _p5, model);
 			} else {
 				var _p4 = A2(_user$project$Clock$update, _p5, model.countdownClock);
