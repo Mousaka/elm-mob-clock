@@ -1,8 +1,8 @@
-# elm-clock-countdown
+# elm-mob-clock
 A timer that counts down to zero and makes a ring tone and then rotates a queue of given participants.
 Great for mob programming!
 
-Try it out here http://mousaka.github.io/elm-clock-countdown/
+Try it out here http://mousaka.github.io/elm-mob-clock/
 
 Clock animation based on this example program: http://elm-lang.org/examples/time
 
