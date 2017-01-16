@@ -12,6 +12,8 @@ import String exposing (toFloat, slice, right, length)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 import Task exposing (perform, succeed)
+import Keyboard exposing (..)
+import Keyboard.Extra exposing (..)
 
 
 main : Program Never Model Msg
@@ -39,6 +41,7 @@ type alias Model =
     { time : Int
     , resetTime : Int
     , clockState : ClockState
+    , timeInput : Maybe String
     }
 
 
@@ -47,6 +50,7 @@ init =
     { time = 60 * 10
     , resetTime = 60 * 10
     , clockState = Stopped
+    , timeInput = Nothing
     }
 
 
@@ -63,6 +67,7 @@ type Msg
     | Finish
     | SoundAlarm
     | SetTimer String
+    | KeyDown KeyCode
 
 
 
@@ -74,9 +79,55 @@ finishCmd =
     succeed Finish
 
 
+handleKeyPress : Model -> KeyCode -> ( Model, Cmd Msg )
+handleKeyPress model keyCode =
+    let
+        numberKeys =
+            [ Number0, Number1, Number2, Number3, Number4, Number5, Number6, Number7, Number8, Number9 ]
+    in
+        case (fromCode keyCode) of
+            CharS ->
+                case model.clockState of
+                    Stopped ->
+                        update Start model
+
+                    Running ->
+                        update Pause model
+
+                    Paused ->
+                        update Start model
+
+                    Finished ->
+                        update Reset model
+
+            key ->
+                if List.member key numberKeys then
+                    let
+                        updateTimer =
+                            update (SetTimer (Maybe.withDefault "" model.timeInput ++ (toString (fromCode keyCode)))) model
+                    in
+                        case model.clockState of
+                            Stopped ->
+                                updateTimer
+
+                            Running ->
+                                (model) ! []
+
+                            Paused ->
+                                updateTimer
+
+                            Finished ->
+                                updateTimer
+                else
+                    (model) ! []
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        KeyDown keyCode ->
+            handleKeyPress model keyCode
+
         Tick _ ->
             case model.time of
                 1 ->
@@ -89,7 +140,7 @@ update msg model =
                     ( { model | time = model.time - 1 }, Cmd.none )
 
         Start ->
-            ( { model | clockState = Running }, Cmd.none )
+            ( { model | clockState = Running, timeInput = Nothing }, Cmd.none )
 
         Reset ->
             ( { model | clockState = Stopped, time = model.resetTime }, Cmd.none )
@@ -109,7 +160,7 @@ update msg model =
         SetTimer newTime ->
             case toMinSec newTime of
                 Just timeValue ->
-                    ( { model | resetTime = timeValue, time = timeValue }, Cmd.none )
+                    ( { model | resetTime = timeValue, time = timeValue, timeInput = (Just (displayTime timeValue)) }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -121,12 +172,22 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.clockState of
-        Running ->
-            Time.every second Tick
+    let
+        timeSub =
+            case model.clockState of
+                Running ->
+                    Time.every second Tick
 
-        _ ->
-            Sub.none
+                _ ->
+                    Sub.none
+
+        keySub =
+            Keyboard.downs KeyDown
+    in
+        Sub.batch
+            [ timeSub
+            , keySub
+            ]
 
 
 
@@ -176,7 +237,7 @@ view model =
             statusText model.clockState
 
         timeField =
-            inputOrDisplayTime model.clockState <| displayTime model.time
+            inputOrDisplayTime model
 
         startPauseResumeButton =
             startPauseResumeB model.clockState
@@ -231,27 +292,27 @@ startPauseResumeB clockState =
             button [ onClick Start, myButton ] [ text "Start" ]
 
 
-inputOrDisplayTime : ClockState -> (String -> Html Msg)
-inputOrDisplayTime clockState =
-    case clockState of
+inputOrDisplayTime : Model -> Html Msg
+inputOrDisplayTime model =
+    case model.clockState of
         Paused ->
-            displayTimer
+            displayTimer model.time
 
         Running ->
-            displayTimer
+            displayTimer model.time
 
         _ ->
-            timerInput
+            timerInput model.timeInput model.time
 
 
-timerInput : String -> Html Msg
-timerInput currentTime =
-    input [ placeholder currentTime, onInput SetTimer, myStyle ] []
+timerInput : Maybe String -> Int -> Html Msg
+timerInput timeInput currentTime =
+    input [ placeholder (displayTime currentTime), value (Maybe.withDefault "" timeInput), onInput SetTimer, myStyle ] []
 
 
-displayTimer : String -> Html Msg
+displayTimer : Int -> Html Msg
 displayTimer displayableTime =
-    div [ myStyle ] [ text displayableTime ]
+    div [ myStyle ] [ text (displayTime displayableTime) ]
 
 
 clock : Int -> Html Msg
