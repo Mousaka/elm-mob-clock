@@ -5,6 +5,9 @@ import ParticipantQueue exposing (..)
 import Styling exposing (..)
 import Html exposing (program)
 import Html exposing (Html, button, div, text)
+import Html.Attributes exposing (id)
+import Html.Events exposing (onClick)
+import Keyboard
 
 
 main : Program Never Model Msg
@@ -24,13 +27,20 @@ main =
 type alias Model =
     { countdownClock : Clock.Model
     , queue : ParticipantQueue.Model
+    , inFocus : Focused
     }
+
+
+type Focused
+    = TheClock
+    | TheQueue
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { countdownClock = Clock.init
       , queue = ParticipantQueue.init
+      , inFocus = TheClock
       }
     , Cmd.none
     )
@@ -43,11 +53,37 @@ init =
 type Msg
     = Clock Clock.Msg
     | Queue ParticipantQueue.Msg
+    | KeyDown Int
+    | Focus Focused
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
+        Focus what ->
+            ( { model | inFocus = what }, Cmd.none )
+
+        KeyDown keyCode ->
+            case keyCode of
+                13 ->
+                    case model.inFocus of
+                        TheClock ->
+                            let
+                                ( newClockModel, clockCmds ) =
+                                    Clock.update Clock.EnterPress model.countdownClock
+                            in
+                                ( { model | countdownClock = newClockModel }, Cmd.map Clock clockCmds )
+
+                        TheQueue ->
+                            let
+                                ( newParticipantQueue, clockCmds ) =
+                                    ParticipantQueue.update ParticipantQueue.EnterPress model.queue
+                            in
+                                ( { model | queue = newParticipantQueue }, Cmd.map Queue clockCmds )
+
+                _ ->
+                    ( model, Cmd.none )
+
         Clock msg ->
             case msg of
                 Finish ->
@@ -95,7 +131,13 @@ subscriptions model =
     Sub.batch
         [ Sub.map Clock (Clock.subscriptions model.countdownClock)
         , Sub.map Queue (ParticipantQueue.subscriptions model.queue)
+        , keyStrokesDispatcher
         ]
+
+
+keyStrokesDispatcher : Sub Msg
+keyStrokesDispatcher =
+    Keyboard.downs KeyDown
 
 
 
@@ -106,6 +148,6 @@ view : Model -> Html Msg
 view model =
     div
         [ flexMiddle ]
-        [ Html.map Clock (Clock.view model.countdownClock)
-        , Html.map Queue (ParticipantQueue.view model.queue)
+        [ div [ id "clock", onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
+        , div [ id "queue", onClick (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
         ]

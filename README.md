@@ -6,10 +6,6 @@ Try it out here http://mousaka.github.io/elm-mob-clock/
 
 Clock animation based on this example program: http://elm-lang.org/examples/time
 
-Keybord shortcuts:
-* `S` -> Start/Stop/Reset After finnish
-* `0-9` -> Numbers goes in as a new time to the timer if timer not running
-
 To run:
 
 * open index.html in browser

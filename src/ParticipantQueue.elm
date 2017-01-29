@@ -1,4 +1,4 @@
-module ParticipantQueue exposing (Model, Msg(Next), init, update, view, subscriptions)
+module ParticipantQueue exposing (Model, Msg(Next, EnterPress), init, update, view, subscriptions)
 
 import Styling exposing (..)
 import Html exposing (Html, div, button, input, Attribute)
@@ -10,7 +10,6 @@ import Html.Events exposing (onInput)
 import Svg exposing (..)
 import String exposing (..)
 import Svg.Attributes exposing (..)
-import Keyboard
 
 
 main : Program Never Model Msg
@@ -46,19 +45,14 @@ type Msg
     = Add (Maybe String)
     | FieldText String
     | Next
-    | KeyDown Int
+    | EnterPress
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        KeyDown key ->
-            case key of
-                13 ->
-                    update (Add (validInput model.fieldText)) model
-
-                _ ->
-                    ( model, Cmd.none )
+        EnterPress ->
+            update (Add (validInput model.fieldText)) model
 
         Add participant ->
             case participant of
@@ -99,7 +93,7 @@ rotateQueue participants =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Keyboard.downs KeyDown
+    Sub.none
 
 
 

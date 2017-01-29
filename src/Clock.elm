@@ -1,4 +1,4 @@
-port module Clock exposing (Model, Msg(Start, Finish), init, update, view, subscriptions)
+port module Clock exposing (Model, Msg(Start, Finish, EnterPress), init, update, view, subscriptions)
 
 import Styling exposing (..)
 import Util exposing (toMinSec)
@@ -12,6 +12,7 @@ import String exposing (toFloat, slice, right, length)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 import Task exposing (perform, succeed)
+import Dom exposing (..)
 
 
 main : Program Never Model Msg
@@ -63,6 +64,9 @@ type Msg
     | Finish
     | SoundAlarm
     | SetTimer String
+    | FocusOn String
+    | EnterPress
+    | FocusResult (Result Dom.Error ())
 
 
 
@@ -113,6 +117,26 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        EnterPress ->
+            case model.clockState of
+                Running ->
+                    update Pause model
+
+                Finished ->
+                    update Start model
+
+                Stopped ->
+                    update Start model
+
+                Paused ->
+                    update Start model
+
+        FocusOn id ->
+            ( model, Dom.focus id |> Task.attempt FocusResult )
+
+        FocusResult result ->
+            ( model, Cmd.none )
 
 
 
@@ -228,7 +252,7 @@ startPauseResumeB clockState =
             button [ hidden True, myButton ] []
 
         _ ->
-            button [ onClick Start, myButton ] [ text "Start" ]
+            button [ Html.Attributes.id "startButton", onClick Start, myButton ] [ text "Start" ]
 
 
 inputOrDisplayTime : ClockState -> (String -> Html Msg)
