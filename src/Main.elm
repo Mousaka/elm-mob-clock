@@ -6,7 +6,7 @@ import Styling exposing (..)
 import Html exposing (program)
 import Html exposing (Html, button, div, text)
 import Html.Attributes exposing (id)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onFocus)
 import Keyboard
 
 
@@ -89,6 +89,9 @@ update message model =
                 Finish ->
                     updateClockWithQueueRoation msg model
 
+                Clock.GotFocus ->
+                    ( { model | inFocus = TheClock }, Cmd.none )
+
                 _ ->
                     let
                         ( newClockModel, clockCmds ) =
@@ -100,8 +103,16 @@ update message model =
             let
                 ( newQueueState, queueCmds ) =
                     ParticipantQueue.update msg model.queue
+
+                ( newModel, cmd ) =
+                    ( { model | queue = newQueueState }, Cmd.map Queue queueCmds )
             in
-                ( { model | queue = newQueueState }, Cmd.map Queue queueCmds )
+                case msg of
+                    ParticipantQueue.GotFocus ->
+                        ( { newModel | inFocus = TheQueue }, cmd )
+
+                    _ ->
+                        ( newModel, cmd )
 
 
 updateClockWithQueueRoation : Clock.Msg -> Model -> ( Model, Cmd Msg )
@@ -148,6 +159,6 @@ view : Model -> Html Msg
 view model =
     div
         [ flexMiddle ]
-        [ div [ id "clock", onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
-        , div [ id "queue", onClick (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
+        [ div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
+        , div [ id "queue", onClick (Focus TheQueue), onFocus (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
         ]

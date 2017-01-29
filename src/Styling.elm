@@ -71,11 +71,12 @@ myButton : Html.Attribute msg
 myButton =
     style
         [ ( "margin", "5px" )
+        , ( "padding-left", "10px" )
+        , ( "padding-right", "10px" )
         , ( "border", "1px solid #0B79CE" )
         , ( "background", "#0B79CE" )
         , ( "color", "#fff" )
         , ( "height", "30px" )
-        , ( "width", "60px" )
         , ( "text-align", "center" )
         ]
 

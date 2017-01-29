@@ -1,4 +1,4 @@
-port module Clock exposing (Model, Msg(Start, Finish, EnterPress), init, update, view, subscriptions)
+port module Clock exposing (Model, Msg(Start, Finish, EnterPress, GotFocus), init, update, view, subscriptions)
 
 import Styling exposing (..)
 import Util exposing (toMinSec)
@@ -58,13 +58,14 @@ init =
 type Msg
     = Tick Time
     | Start
+    | StartNext
     | Reset
     | Pause
     | Unpause
     | Finish
+    | GotFocus
     | SoundAlarm
     | SetTimer String
-    | FocusOn String
     | EnterPress
     | FocusResult (Result Dom.Error ())
 
@@ -93,16 +94,19 @@ update msg model =
                     ( { model | time = model.time - 1 }, Cmd.none )
 
         Start ->
-            ( { model | clockState = Running }, Cmd.none )
+            ( { model | clockState = Running }, Dom.focus "clock" |> Task.attempt FocusResult )
+
+        StartNext ->
+            update Start { model | clockState = Stopped, time = model.resetTime }
 
         Reset ->
-            ( { model | clockState = Stopped, time = model.resetTime }, Cmd.none )
+            ( { model | clockState = Stopped, time = model.resetTime }, Dom.focus "clock" |> Task.attempt FocusResult )
 
         Pause ->
-            ( { model | clockState = Paused }, Cmd.none )
+            ( { model | clockState = Paused }, Dom.focus "clock" |> Task.attempt FocusResult )
 
         Unpause ->
-            ( { model | clockState = Running }, Cmd.none )
+            ( { model | clockState = Running }, Dom.focus "clock" |> Task.attempt FocusResult )
 
         Finish ->
             ( { model | clockState = Finished }, Cmd.none )
@@ -124,7 +128,7 @@ update msg model =
                     update Pause model
 
                 Finished ->
-                    update Start model
+                    update StartNext model
 
                 Stopped ->
                     update Start model
@@ -132,10 +136,10 @@ update msg model =
                 Paused ->
                     update Start model
 
-        FocusOn id ->
-            ( model, Dom.focus id |> Task.attempt FocusResult )
-
         FocusResult result ->
+            ( model, Cmd.none )
+
+        GotFocus ->
             ( model, Cmd.none )
 
 
@@ -208,7 +212,7 @@ view model =
         resetButton =
             resetB model.clockState
     in
-        div []
+        div [ Html.Attributes.id "clock" ]
             [ div [ flexMiddle ] [ clock model.time ]
             , div [ flexMiddle ] [ text message ]
             , div [ flexMiddle ] [ timeField ]
@@ -230,29 +234,32 @@ resetB : ClockState -> Html Msg
 resetB clockState =
     case clockState of
         Paused ->
-            button [ onClick Reset, myButton ] [ text "Reset" ]
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Reset, myButton ] [ text "Reset" ]
 
         Finished ->
-            button [ onClick Reset, myButton ] [ text "Reset" ]
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick StartNext, myButton ] [ text "Start next" ]
 
         _ ->
-            button [ onClick Reset, hidden True, myButton ] [ text "Reset" ]
+            button [ onFocus GotFocus, onClick Reset, hidden True, myButton ] [ text "Reset" ]
 
 
 startPauseResumeB : ClockState -> Html Msg
 startPauseResumeB clockState =
     case clockState of
         Paused ->
-            button [ onClick Unpause, myButton ] [ text "Resume" ]
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Unpause, myButton ]
+                [ text "Resume" ]
 
         Running ->
-            button [ onClick Pause, myButton ] [ text "Pause" ]
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Pause, myButton ]
+                [ text "Pause" ]
 
         Finished ->
             button [ hidden True, myButton ] []
 
         _ ->
-            button [ Html.Attributes.id "startButton", onClick Start, myButton ] [ text "Start" ]
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Start, myButton ]
+                [ text "Start" ]
 
 
 inputOrDisplayTime : ClockState -> (String -> Html Msg)
@@ -270,7 +277,7 @@ inputOrDisplayTime clockState =
 
 timerInput : String -> Html Msg
 timerInput currentTime =
-    input [ placeholder currentTime, onInput SetTimer, myStyle ] []
+    input [ onFocus GotFocus, placeholder currentTime, onInput SetTimer, myStyle ] []
 
 
 displayTimer : String -> Html Msg

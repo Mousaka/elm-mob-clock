@@ -9402,23 +9402,27 @@ var _user$project$Styling$myButton = _elm_lang$html$Html_Attributes$style(
 		_0: {ctor: '_Tuple2', _0: 'margin', _1: '5px'},
 		_1: {
 			ctor: '::',
-			_0: {ctor: '_Tuple2', _0: 'border', _1: '1px solid #0B79CE'},
+			_0: {ctor: '_Tuple2', _0: 'padding-left', _1: '10px'},
 			_1: {
 				ctor: '::',
-				_0: {ctor: '_Tuple2', _0: 'background', _1: '#0B79CE'},
+				_0: {ctor: '_Tuple2', _0: 'padding-right', _1: '10px'},
 				_1: {
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: 'color', _1: '#fff'},
+					_0: {ctor: '_Tuple2', _0: 'border', _1: '1px solid #0B79CE'},
 					_1: {
 						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: 'height', _1: '30px'},
+						_0: {ctor: '_Tuple2', _0: 'background', _1: '#0B79CE'},
 						_1: {
 							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: 'width', _1: '60px'},
+							_0: {ctor: '_Tuple2', _0: 'color', _1: '#fff'},
 							_1: {
 								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
-								_1: {ctor: '[]'}
+								_0: {ctor: '_Tuple2', _0: 'height', _1: '30px'},
+								_1: {
+									ctor: '::',
+									_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
+									_1: {ctor: '[]'}
+								}
 							}
 						}
 					}
@@ -9742,25 +9746,28 @@ var _user$project$Clock$FocusResult = function (a) {
 	return {ctor: 'FocusResult', _0: a};
 };
 var _user$project$Clock$EnterPress = {ctor: 'EnterPress'};
-var _user$project$Clock$FocusOn = function (a) {
-	return {ctor: 'FocusOn', _0: a};
-};
 var _user$project$Clock$SetTimer = function (a) {
 	return {ctor: 'SetTimer', _0: a};
 };
+var _user$project$Clock$SoundAlarm = {ctor: 'SoundAlarm'};
+var _user$project$Clock$GotFocus = {ctor: 'GotFocus'};
 var _user$project$Clock$timerInput = function (currentTime) {
 	return A2(
 		_elm_lang$html$Html$input,
 		{
 			ctor: '::',
-			_0: _elm_lang$html$Html_Attributes$placeholder(currentTime),
+			_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 			_1: {
 				ctor: '::',
-				_0: _elm_lang$html$Html_Events$onInput(_user$project$Clock$SetTimer),
+				_0: _elm_lang$html$Html_Attributes$placeholder(currentTime),
 				_1: {
 					ctor: '::',
-					_0: _user$project$Styling$myStyle,
-					_1: {ctor: '[]'}
+					_0: _elm_lang$html$Html_Events$onInput(_user$project$Clock$SetTimer),
+					_1: {
+						ctor: '::',
+						_0: _user$project$Styling$myStyle,
+						_1: {ctor: '[]'}
+					}
 				}
 			}
 		},
@@ -9777,12 +9784,12 @@ var _user$project$Clock$inputOrDisplayTime = function (clockState) {
 			return _user$project$Clock$timerInput;
 	}
 };
-var _user$project$Clock$SoundAlarm = {ctor: 'SoundAlarm'};
 var _user$project$Clock$Finish = {ctor: 'Finish'};
 var _user$project$Clock$finishCmd = _elm_lang$core$Task$succeed(_user$project$Clock$Finish);
 var _user$project$Clock$Unpause = {ctor: 'Unpause'};
 var _user$project$Clock$Pause = {ctor: 'Pause'};
 var _user$project$Clock$Reset = {ctor: 'Reset'};
+var _user$project$Clock$StartNext = {ctor: 'StartNext'};
 var _user$project$Clock$resetB = function (clockState) {
 	var _p4 = clockState;
 	switch (_p4.ctor) {
@@ -9791,11 +9798,19 @@ var _user$project$Clock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Styling$myButton,
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$id('startButton'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
+						}
 					}
 				},
 				{
@@ -9808,16 +9823,24 @@ var _user$project$Clock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Styling$myButton,
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$id('startButton'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$StartNext),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
+						}
 					}
 				},
 				{
 					ctor: '::',
-					_0: _elm_lang$svg$Svg$text('Reset'),
+					_0: _elm_lang$svg$Svg$text('Start next'),
 					_1: {ctor: '[]'}
 				});
 		default:
@@ -9825,14 +9848,18 @@ var _user$project$Clock$resetB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$hidden(true),
+						_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
 						_1: {
 							ctor: '::',
-							_0: _user$project$Styling$myButton,
-							_1: {ctor: '[]'}
+							_0: _elm_lang$html$Html_Attributes$hidden(true),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
 						}
 					}
 				},
@@ -9887,15 +9914,29 @@ var _user$project$Clock$update = F2(
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{clockState: _user$project$Clock$Running}),
-						_1: _elm_lang$core$Platform_Cmd$none
+						_1: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Clock$FocusResult,
+							_elm_lang$dom$Dom$focus('clock'))
 					};
+				case 'StartNext':
+					var _v8 = _user$project$Clock$Start,
+						_v9 = _elm_lang$core$Native_Utils.update(
+						model,
+						{clockState: _user$project$Clock$Stopped, time: model.resetTime});
+					msg = _v8;
+					model = _v9;
+					continue update;
 				case 'Reset':
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{clockState: _user$project$Clock$Stopped, time: model.resetTime}),
-						_1: _elm_lang$core$Platform_Cmd$none
+						_1: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Clock$FocusResult,
+							_elm_lang$dom$Dom$focus('clock'))
 					};
 				case 'Pause':
 					return {
@@ -9903,7 +9944,10 @@ var _user$project$Clock$update = F2(
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{clockState: _user$project$Clock$Paused}),
-						_1: _elm_lang$core$Platform_Cmd$none
+						_1: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Clock$FocusResult,
+							_elm_lang$dom$Dom$focus('clock'))
 					};
 				case 'Unpause':
 					return {
@@ -9911,7 +9955,10 @@ var _user$project$Clock$update = F2(
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
 							{clockState: _user$project$Clock$Running}),
-						_1: _elm_lang$core$Platform_Cmd$none
+						_1: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Clock$FocusResult,
+							_elm_lang$dom$Dom$focus('clock'))
 					};
 				case 'Finish':
 					return {
@@ -9946,39 +9993,32 @@ var _user$project$Clock$update = F2(
 					var _p10 = model.clockState;
 					switch (_p10.ctor) {
 						case 'Running':
-							var _v10 = _user$project$Clock$Pause,
-								_v11 = model;
-							msg = _v10;
-							model = _v11;
-							continue update;
-						case 'Finished':
-							var _v12 = _user$project$Clock$Start,
+							var _v12 = _user$project$Clock$Pause,
 								_v13 = model;
 							msg = _v12;
 							model = _v13;
 							continue update;
-						case 'Stopped':
-							var _v14 = _user$project$Clock$Start,
+						case 'Finished':
+							var _v14 = _user$project$Clock$StartNext,
 								_v15 = model;
 							msg = _v14;
 							model = _v15;
 							continue update;
-						default:
+						case 'Stopped':
 							var _v16 = _user$project$Clock$Start,
 								_v17 = model;
 							msg = _v16;
 							model = _v17;
 							continue update;
+						default:
+							var _v18 = _user$project$Clock$Start,
+								_v19 = model;
+							msg = _v18;
+							model = _v19;
+							continue update;
 					}
-				case 'FocusOn':
-					return {
-						ctor: '_Tuple2',
-						_0: model,
-						_1: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Clock$FocusResult,
-							_elm_lang$dom$Dom$focus(_p5._0))
-					};
+				case 'FocusResult':
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				default:
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			}
@@ -9992,11 +10032,19 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Unpause),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Styling$myButton,
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$id('startButton'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Unpause),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
+						}
 					}
 				},
 				{
@@ -10009,11 +10057,19 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Pause),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Styling$myButton,
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$id('startButton'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Pause),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
+						}
 					}
 				},
 				{
@@ -10039,14 +10095,18 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 				_elm_lang$html$Html$button,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$id('startButton'),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Start),
+						_0: _elm_lang$html$Html_Attributes$id('startButton'),
 						_1: {
 							ctor: '::',
-							_0: _user$project$Styling$myButton,
-							_1: {ctor: '[]'}
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Start),
+							_1: {
+								ctor: '::',
+								_0: _user$project$Styling$myButton,
+								_1: {ctor: '[]'}
+							}
 						}
 					}
 				},
@@ -10067,7 +10127,11 @@ var _user$project$Clock$view = function (model) {
 	var message = _user$project$Clock$statusText(model.clockState);
 	return A2(
 		_elm_lang$html$Html$div,
-		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$id('clock'),
+			_1: {ctor: '[]'}
+		},
 		{
 			ctor: '::',
 			_0: A2(
@@ -10263,6 +10327,7 @@ var _user$project$ParticipantQueue$Model = F2(
 	function (a, b) {
 		return {participants: a, fieldText: b};
 	});
+var _user$project$ParticipantQueue$GotFocus = {ctor: 'GotFocus'};
 var _user$project$ParticipantQueue$EnterPress = {ctor: 'EnterPress'};
 var _user$project$ParticipantQueue$Next = {ctor: 'Next'};
 var _user$project$ParticipantQueue$nextButton = A2(
@@ -10429,20 +10494,24 @@ var _user$project$ParticipantQueue$nameInput = function (fieldText) {
 				_elm_lang$html$Html$input,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$minlength(1),
+					_0: _elm_lang$html$Html_Events$onFocus(_user$project$ParticipantQueue$GotFocus),
 					_1: {
 						ctor: '::',
-						_0: _user$project$Styling$queueInput,
+						_0: _elm_lang$html$Html_Attributes$minlength(1),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$placeholder('Add participant'),
+							_0: _user$project$Styling$queueInput,
 							_1: {
 								ctor: '::',
-								_0: _elm_lang$html$Html_Events$onInput(_user$project$ParticipantQueue$FieldText),
+								_0: _elm_lang$html$Html_Attributes$placeholder('Add participant'),
 								_1: {
 									ctor: '::',
-									_0: _elm_lang$html$Html_Attributes$value(fieldText),
-									_1: {ctor: '[]'}
+									_0: _elm_lang$html$Html_Events$onInput(_user$project$ParticipantQueue$FieldText),
+									_1: {
+										ctor: '::',
+										_0: _elm_lang$html$Html_Attributes$value(fieldText),
+										_1: {ctor: '[]'}
+									}
 								}
 							}
 						}
@@ -10497,7 +10566,7 @@ var _user$project$ParticipantQueue$update = F2(
 							{fieldText: _p3._0}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
-				default:
+				case 'Next':
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
@@ -10507,6 +10576,8 @@ var _user$project$ParticipantQueue$update = F2(
 							}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
+				default:
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			}
 		}
 	});
@@ -10719,31 +10790,55 @@ var _user$project$Main$update = F2(
 			case 'Clock':
 				var _p9 = _p2._0;
 				var _p7 = _p9;
-				if (_p7.ctor === 'Finish') {
-					return A2(_user$project$Main$updateClockWithQueueRoation, _p9, model);
-				} else {
-					var _p8 = A2(_user$project$Clock$update, _p9, model.countdownClock);
-					var newClockModel = _p8._0;
-					var clockCmds = _p8._1;
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{countdownClock: newClockModel}),
-						_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
-					};
+				switch (_p7.ctor) {
+					case 'Finish':
+						return A2(_user$project$Main$updateClockWithQueueRoation, _p9, model);
+					case 'GotFocus':
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{inFocus: _user$project$Main$TheClock}),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
+					default:
+						var _p8 = A2(_user$project$Clock$update, _p9, model.countdownClock);
+						var newClockModel = _p8._0;
+						var clockCmds = _p8._1;
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{countdownClock: newClockModel}),
+							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
+						};
 				}
 			default:
-				var _p10 = A2(_user$project$ParticipantQueue$update, _p2._0, model.queue);
+				var _p13 = _p2._0;
+				var _p10 = A2(_user$project$ParticipantQueue$update, _p13, model.queue);
 				var newQueueState = _p10._0;
 				var queueCmds = _p10._1;
-				return {
+				var _p11 = {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{queue: newQueueState}),
 					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queueCmds)
 				};
+				var newModel = _p11._0;
+				var cmd = _p11._1;
+				var _p12 = _p13;
+				if (_p12.ctor === 'GotFocus') {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							newModel,
+							{inFocus: _user$project$Main$TheQueue}),
+						_1: cmd
+					};
+				} else {
+					return {ctor: '_Tuple2', _0: newModel, _1: cmd};
+				}
 		}
 	});
 var _user$project$Main$subscriptions = function (model) {
@@ -10782,13 +10877,9 @@ var _user$project$Main$view = function (model) {
 				_elm_lang$html$Html$div,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$id('clock'),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html_Events$onClick(
-							_user$project$Main$Focus(_user$project$Main$TheClock)),
-						_1: {ctor: '[]'}
-					}
+					_0: _elm_lang$html$Html_Events$onClick(
+						_user$project$Main$Focus(_user$project$Main$TheClock)),
+					_1: {ctor: '[]'}
 				},
 				{
 					ctor: '::',
@@ -10809,7 +10900,12 @@ var _user$project$Main$view = function (model) {
 							ctor: '::',
 							_0: _elm_lang$html$Html_Events$onClick(
 								_user$project$Main$Focus(_user$project$Main$TheQueue)),
-							_1: {ctor: '[]'}
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onFocus(
+									_user$project$Main$Focus(_user$project$Main$TheQueue)),
+								_1: {ctor: '[]'}
+							}
 						}
 					},
 					{

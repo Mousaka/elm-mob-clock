@@ -1,4 +1,4 @@
-module ParticipantQueue exposing (Model, Msg(Next, EnterPress), init, update, view, subscriptions)
+module ParticipantQueue exposing (Model, Msg(Next, EnterPress, GotFocus), init, update, view, subscriptions)
 
 import Styling exposing (..)
 import Html exposing (Html, div, button, input, Attribute)
@@ -46,6 +46,7 @@ type Msg
     | FieldText String
     | Next
     | EnterPress
+    | GotFocus
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -71,6 +72,9 @@ update msg model =
 
         Next ->
             ( { model | participants = rotateQueue model.participants }, Cmd.none )
+
+        GotFocus ->
+            ( model, Cmd.none )
 
 
 rotateQueue : List String -> List String
@@ -138,7 +142,7 @@ displayOneParticipant participant =
 nameInput : String -> Html Msg
 nameInput fieldText =
     div []
-        [ input [ minlength 1, queueInput, placeholder "Add participant", onInput FieldText, value fieldText ] []
+        [ input [ onFocus GotFocus, minlength 1, queueInput, placeholder "Add participant", onInput FieldText, value fieldText ] []
         ]
 
 
