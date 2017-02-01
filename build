@@ -1,1 +1,1 @@
-elm make src/Main.elm --output=count-down-clock.js
+elm make src/Main.elm --output=docs/count-down-clock.js
