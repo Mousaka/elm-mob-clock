@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Clock exposing (..)
+import CooldownClock exposing (..)
 import ParticipantQueue exposing (..)
 import Styling exposing (..)
 import Html exposing (program)
@@ -26,6 +27,7 @@ main =
 
 type alias Model =
     { countdownClock : Clock.Model
+    , cooldownClock : CooldownClock.Model
     , queue : ParticipantQueue.Model
     , inFocus : Focused
     }
@@ -39,6 +41,7 @@ type Focused
 init : ( Model, Cmd Msg )
 init =
     ( { countdownClock = Clock.init
+      , cooldownClock = CooldownClock.init
       , queue = ParticipantQueue.init
       , inFocus = TheClock
       }
@@ -86,18 +89,29 @@ update message model =
 
         Clock msg ->
             case msg of
-                Finish ->
+                StartNext ->
                     updateClockWithQueueRoation msg model
 
                 Clock.GotFocus ->
                     ( { model | inFocus = TheClock }, Cmd.none )
 
+                Tick _ ->
+                    whoToTick msg model
+
                 _ ->
                     let
                         ( newClockModel, clockCmds ) =
                             Clock.update msg model.countdownClock
+
+                        ( newCooldownClockModel, cooldownClockCmd ) =
+                            CooldownClock.update msg model.cooldownClock
                     in
-                        ( { model | countdownClock = newClockModel }, Cmd.map Clock clockCmds )
+                        ( { model
+                            | countdownClock = newClockModel
+                            , cooldownClock = newCooldownClockModel
+                          }
+                        , Cmd.map Clock clockCmds
+                        )
 
         Queue msg ->
             let
@@ -115,22 +129,62 @@ update message model =
                         ( newModel, cmd )
 
 
+whoToTick : Clock.Msg -> Model -> ( Model, Cmd Msg )
+whoToTick msg model =
+    if model.countdownClock.clockState == Running then
+        let
+            ( newState, newCmd ) =
+                Clock.update msg model.countdownClock
+        in
+            ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
+    else
+        case model.cooldownClock of
+            Active m ->
+                if m.clockState == Running then
+                    let
+                        ( newState, newCmd ) =
+                            CooldownClock.update msg model.cooldownClock
+                    in
+                        ( { model | cooldownClock = newState }, Cmd.map Clock newCmd )
+                else
+                    ( model, Cmd.none )
+
+            Deactivated ->
+                ( model, Cmd.none )
+
+
 updateClockWithQueueRoation : Clock.Msg -> Model -> ( Model, Cmd Msg )
 updateClockWithQueueRoation msg model =
     let
         ( queueModel, queuecmd ) =
             ParticipantQueue.update Next model.queue
 
-        ( newClockModel, clockCmds ) =
+        ( newClockModel, clockCmd ) =
             Clock.update msg model.countdownClock
 
-        mappedClockCmds =
-            Cmd.map Clock clockCmds
+        ( newCooldownClockModel, cooldownClockCmd ) =
+            CooldownClock.update msg model.cooldownClock
+
+        mappedQueueCmd =
+            Cmd.map Queue queuecmd
+
+        mappedClockCmd =
+            Cmd.map Clock clockCmd
+
+        mappedCooldownClockCmd =
+            Cmd.map Clock cooldownClockCmd
+
+        batchedCmds =
+            Cmd.batch [ mappedQueueCmd, mappedClockCmd, mappedCooldownClockCmd ]
 
         model_ =
-            { model | queue = queueModel, countdownClock = newClockModel }
+            { model
+                | queue = queueModel
+                , countdownClock = newClockModel
+                , cooldownClock = newCooldownClockModel
+            }
     in
-        ( model_, mappedClockCmds )
+        ( model_, batchedCmds )
 
 
 
@@ -142,6 +196,7 @@ subscriptions model =
     Sub.batch
         [ Sub.map Clock (Clock.subscriptions model.countdownClock)
         , Sub.map Queue (ParticipantQueue.subscriptions model.queue)
+        , Sub.map Clock (CooldownClock.subscriptions model.cooldownClock)
         , keyStrokesDispatcher
         ]
 
@@ -159,6 +214,7 @@ view : Model -> Html Msg
 view model =
     div
         [ flexMiddle ]
-        [ div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
+        [ div [] [ Html.map Clock (CooldownClock.view model.cooldownClock) ]
+        , div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
         , div [ id "queue", onClick (Focus TheQueue), onFocus (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
         ]

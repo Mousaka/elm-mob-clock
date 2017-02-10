@@ -8,6 +8,8 @@ Clock animation based on this example program: http://elm-lang.org/examples/time
 
 For best user experience with keyboard shortcut use `enter` button instead of space for pause/resume/start/start next/add participant.
 
+The clock automatically starts next persons turn after 30 seconds. Currently you cannot turn this off.
+
 To run:
 
 * open index.html in browser

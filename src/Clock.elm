@@ -1,7 +1,7 @@
-port module Clock exposing (Model, Msg(Start, Finish, EnterPress, GotFocus), init, update, view, subscriptions)
+port module Clock exposing (inputOrDisplayTime, displayTime, Model, Msg(Start, StartNext, Finish, EnterPress, GotFocus, Tick), ClockState(..), init, update, view, subscriptions)
 
 import Styling exposing (..)
-import Util exposing (toMinSec)
+import Util exposing (toMinSec, msgAsCmd)
 import Html exposing (Html, div, button, input, Attribute)
 import Html.Events exposing (..)
 import Html exposing (program)
@@ -97,7 +97,7 @@ update msg model =
             ( { model | clockState = Running }, Dom.focus "clock" |> Task.attempt FocusResult )
 
         StartNext ->
-            update Start { model | clockState = Stopped, time = model.resetTime }
+            ( { model | clockState = Stopped, time = model.resetTime }, msgAsCmd Start )
 
         Reset ->
             ( { model | clockState = Stopped, time = model.resetTime }, Dom.focus "clock" |> Task.attempt FocusResult )

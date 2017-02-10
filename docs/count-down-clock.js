@@ -9587,6 +9587,14 @@ var _user$project$Util$toMinSec = function (textTime) {
 	return _user$project$Util$numSlicer(
 		_user$project$Util$removeNonNumerals(textTime));
 };
+var _user$project$Util$msgAsCmd = function (msg) {
+	return A2(
+		_elm_lang$core$Task$perform,
+		function (_p2) {
+			return msg;
+		},
+		_elm_lang$core$Task$succeed(msg));
+};
 
 var _user$project$Clock$angleHelper = F2(
 	function (speed, seconds) {
@@ -9920,13 +9928,13 @@ var _user$project$Clock$update = F2(
 							_elm_lang$dom$Dom$focus('clock'))
 					};
 				case 'StartNext':
-					var _v8 = _user$project$Clock$Start,
-						_v9 = _elm_lang$core$Native_Utils.update(
-						model,
-						{clockState: _user$project$Clock$Stopped, time: model.resetTime});
-					msg = _v8;
-					model = _v9;
-					continue update;
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{clockState: _user$project$Clock$Stopped, time: model.resetTime}),
+						_1: _user$project$Util$msgAsCmd(_user$project$Clock$Start)
+					};
 				case 'Reset':
 					return {
 						ctor: '_Tuple2',
@@ -9993,28 +10001,28 @@ var _user$project$Clock$update = F2(
 					var _p10 = model.clockState;
 					switch (_p10.ctor) {
 						case 'Running':
-							var _v12 = _user$project$Clock$Pause,
+							var _v10 = _user$project$Clock$Pause,
+								_v11 = model;
+							msg = _v10;
+							model = _v11;
+							continue update;
+						case 'Finished':
+							var _v12 = _user$project$Clock$StartNext,
 								_v13 = model;
 							msg = _v12;
 							model = _v13;
 							continue update;
-						case 'Finished':
-							var _v14 = _user$project$Clock$StartNext,
+						case 'Stopped':
+							var _v14 = _user$project$Clock$Start,
 								_v15 = model;
 							msg = _v14;
 							model = _v15;
 							continue update;
-						case 'Stopped':
+						default:
 							var _v16 = _user$project$Clock$Start,
 								_v17 = model;
 							msg = _v16;
 							model = _v17;
-							continue update;
-						default:
-							var _v18 = _user$project$Clock$Start,
-								_v19 = model;
-							msg = _v18;
-							model = _v19;
 							continue update;
 					}
 				case 'FocusResult':
@@ -10219,6 +10227,130 @@ var _user$project$Clock$main = _elm_lang$html$Html$program(
 		update: _user$project$Clock$update,
 		subscriptions: _user$project$Clock$subscriptions
 	})();
+
+var _user$project$CooldownClock$subscriptions = function (model) {
+	var _p0 = model;
+	if (_p0.ctor === 'Active') {
+		var _p1 = _p0._0.clockState;
+		if (_p1.ctor === 'Running') {
+			return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
+		} else {
+			return _elm_lang$core$Platform_Sub$none;
+		}
+	} else {
+		return _elm_lang$core$Platform_Sub$none;
+	}
+};
+var _user$project$CooldownClock$view = function (model) {
+	var _p2 = model;
+	if (_p2.ctor === 'Active') {
+		var _p3 = _p2._0;
+		var timeField = A2(
+			_user$project$Clock$inputOrDisplayTime,
+			_p3.clockState,
+			_user$project$Clock$displayTime(_p3.time));
+		return A2(
+			_elm_lang$html$Html$div,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$hidden(
+					!_elm_lang$core$Native_Utils.eq(_p3.clockState, _user$project$Clock$Running)),
+				_1: {ctor: '[]'}
+			},
+			{
+				ctor: '::',
+				_0: timeField,
+				_1: {ctor: '[]'}
+			});
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			{ctor: '[]'},
+			{ctor: '[]'});
+	}
+};
+var _user$project$CooldownClock$Active = function (a) {
+	return {ctor: 'Active', _0: a};
+};
+var _user$project$CooldownClock$init = _user$project$CooldownClock$Active(
+	{time: 30, resetTime: 30, clockState: _user$project$Clock$Stopped});
+var _user$project$CooldownClock$update = F2(
+	function (msg, model) {
+		var _p4 = model;
+		if (_p4.ctor === 'Active') {
+			var _p7 = _p4._0;
+			var _p5 = msg;
+			switch (_p5.ctor) {
+				case 'Finish':
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$CooldownClock$Active(
+							_elm_lang$core$Native_Utils.update(
+								_p7,
+								{clockState: _user$project$Clock$Running})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'StartNext':
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$CooldownClock$Active(
+							_elm_lang$core$Native_Utils.update(
+								_p7,
+								{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'Start':
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$CooldownClock$Active(
+							_elm_lang$core$Native_Utils.update(
+								_p7,
+								{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'Tick':
+					var _p6 = _p7.time;
+					if (_p6 === 0) {
+						return {
+							ctor: '_Tuple2',
+							_0: _user$project$CooldownClock$Active(
+								_elm_lang$core$Native_Utils.update(
+									_p7,
+									{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
+							_1: _user$project$Util$msgAsCmd(_user$project$Clock$StartNext)
+						};
+					} else {
+						return {
+							ctor: '_Tuple2',
+							_0: _user$project$CooldownClock$Active(
+								_elm_lang$core$Native_Utils.update(
+									_p7,
+									{time: _p7.time - 1})),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
+					}
+				default:
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$CooldownClock$Active(_p7),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+			}
+		} else {
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
+var _user$project$CooldownClock$main = _elm_lang$html$Html$program(
+	{
+		init: A2(
+			_elm_lang$core$Platform_Cmd_ops['!'],
+			_user$project$CooldownClock$init,
+			{ctor: '[]'}),
+		view: _user$project$CooldownClock$view,
+		update: _user$project$CooldownClock$update,
+		subscriptions: _user$project$CooldownClock$subscriptions
+	})();
+var _user$project$CooldownClock$Deactivated = {ctor: 'Deactivated'};
 
 var _user$project$ParticipantQueue$validInput = function (text) {
 	return (_elm_lang$core$Native_Utils.cmp(
@@ -10707,15 +10839,15 @@ var _user$project$ParticipantQueue$main = _elm_lang$html$Html$program(
 		subscriptions: _user$project$ParticipantQueue$subscriptions
 	})();
 
-var _user$project$Main$Model = F3(
-	function (a, b, c) {
-		return {countdownClock: a, queue: b, inFocus: c};
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {countdownClock: a, cooldownClock: b, queue: c, inFocus: d};
 	});
 var _user$project$Main$TheQueue = {ctor: 'TheQueue'};
 var _user$project$Main$TheClock = {ctor: 'TheClock'};
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
-	_0: {countdownClock: _user$project$Clock$init, queue: _user$project$ParticipantQueue$init, inFocus: _user$project$Main$TheClock},
+	_0: {countdownClock: _user$project$Clock$init, cooldownClock: _user$project$CooldownClock$init, queue: _user$project$ParticipantQueue$init, inFocus: _user$project$Main$TheClock},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _user$project$Main$Focus = function (a) {
@@ -10731,40 +10863,94 @@ var _user$project$Main$Queue = function (a) {
 var _user$project$Main$Clock = function (a) {
 	return {ctor: 'Clock', _0: a};
 };
+var _user$project$Main$whoToTick = F2(
+	function (msg, model) {
+		if (_elm_lang$core$Native_Utils.eq(model.countdownClock.clockState, _user$project$Clock$Running)) {
+			var _p0 = A2(_user$project$Clock$update, msg, model.countdownClock);
+			var newState = _p0._0;
+			var newCmd = _p0._1;
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{countdownClock: newState}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, newCmd)
+			};
+		} else {
+			var _p1 = model.cooldownClock;
+			if (_p1.ctor === 'Active') {
+				if (_elm_lang$core$Native_Utils.eq(_p1._0.clockState, _user$project$Clock$Running)) {
+					var _p2 = A2(_user$project$CooldownClock$update, msg, model.cooldownClock);
+					var newState = _p2._0;
+					var newCmd = _p2._1;
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{cooldownClock: newState}),
+						_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, newCmd)
+					};
+				} else {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+			} else {
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			}
+		}
+	});
 var _user$project$Main$updateClockWithQueueRoation = F2(
 	function (msg, model) {
-		var _p0 = A2(_user$project$Clock$update, msg, model.countdownClock);
-		var newClockModel = _p0._0;
-		var clockCmds = _p0._1;
-		var mappedClockCmds = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds);
-		var _p1 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
-		var queueModel = _p1._0;
-		var queuecmd = _p1._1;
+		var _p3 = A2(_user$project$CooldownClock$update, msg, model.cooldownClock);
+		var newCooldownClockModel = _p3._0;
+		var cooldownClockCmd = _p3._1;
+		var mappedCooldownClockCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, cooldownClockCmd);
+		var _p4 = A2(_user$project$Clock$update, msg, model.countdownClock);
+		var newClockModel = _p4._0;
+		var clockCmd = _p4._1;
+		var mappedClockCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmd);
+		var _p5 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
+		var queueModel = _p5._0;
+		var queuecmd = _p5._1;
+		var mappedQueueCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queuecmd);
+		var batchedCmds = _elm_lang$core$Platform_Cmd$batch(
+			{
+				ctor: '::',
+				_0: mappedQueueCmd,
+				_1: {
+					ctor: '::',
+					_0: mappedClockCmd,
+					_1: {
+						ctor: '::',
+						_0: mappedCooldownClockCmd,
+						_1: {ctor: '[]'}
+					}
+				}
+			});
 		var model_ = _elm_lang$core$Native_Utils.update(
 			model,
-			{queue: queueModel, countdownClock: newClockModel});
-		return {ctor: '_Tuple2', _0: model_, _1: mappedClockCmds};
+			{queue: queueModel, countdownClock: newClockModel, cooldownClock: newCooldownClockModel});
+		return {ctor: '_Tuple2', _0: model_, _1: batchedCmds};
 	});
 var _user$project$Main$update = F2(
 	function (message, model) {
-		var _p2 = message;
-		switch (_p2.ctor) {
+		var _p6 = message;
+		switch (_p6.ctor) {
 			case 'Focus':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{inFocus: _p2._0}),
+						{inFocus: _p6._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'KeyDown':
-				var _p3 = _p2._0;
-				if (_p3 === 13) {
-					var _p4 = model.inFocus;
-					if (_p4.ctor === 'TheClock') {
-						var _p5 = A2(_user$project$Clock$update, _user$project$Clock$EnterPress, model.countdownClock);
-						var newClockModel = _p5._0;
-						var clockCmds = _p5._1;
+				var _p7 = _p6._0;
+				if (_p7 === 13) {
+					var _p8 = model.inFocus;
+					if (_p8.ctor === 'TheClock') {
+						var _p9 = A2(_user$project$Clock$update, _user$project$Clock$EnterPress, model.countdownClock);
+						var newClockModel = _p9._0;
+						var clockCmds = _p9._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
@@ -10773,9 +10959,9 @@ var _user$project$Main$update = F2(
 							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
 						};
 					} else {
-						var _p6 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$EnterPress, model.queue);
-						var newParticipantQueue = _p6._0;
-						var clockCmds = _p6._1;
+						var _p10 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$EnterPress, model.queue);
+						var newParticipantQueue = _p10._0;
+						var clockCmds = _p10._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
@@ -10788,11 +10974,11 @@ var _user$project$Main$update = F2(
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
 			case 'Clock':
-				var _p9 = _p2._0;
-				var _p7 = _p9;
-				switch (_p7.ctor) {
-					case 'Finish':
-						return A2(_user$project$Main$updateClockWithQueueRoation, _p9, model);
+				var _p14 = _p6._0;
+				var _p11 = _p14;
+				switch (_p11.ctor) {
+					case 'StartNext':
+						return A2(_user$project$Main$updateClockWithQueueRoation, _p14, model);
 					case 'GotFocus':
 						return {
 							ctor: '_Tuple2',
@@ -10801,34 +10987,39 @@ var _user$project$Main$update = F2(
 								{inFocus: _user$project$Main$TheClock}),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
+					case 'Tick':
+						return A2(_user$project$Main$whoToTick, _p14, model);
 					default:
-						var _p8 = A2(_user$project$Clock$update, _p9, model.countdownClock);
-						var newClockModel = _p8._0;
-						var clockCmds = _p8._1;
+						var _p12 = A2(_user$project$CooldownClock$update, _p14, model.cooldownClock);
+						var newCooldownClockModel = _p12._0;
+						var cooldownClockCmd = _p12._1;
+						var _p13 = A2(_user$project$Clock$update, _p14, model.countdownClock);
+						var newClockModel = _p13._0;
+						var clockCmds = _p13._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								model,
-								{countdownClock: newClockModel}),
+								{countdownClock: newClockModel, cooldownClock: newCooldownClockModel}),
 							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
 						};
 				}
 			default:
-				var _p13 = _p2._0;
-				var _p10 = A2(_user$project$ParticipantQueue$update, _p13, model.queue);
-				var newQueueState = _p10._0;
-				var queueCmds = _p10._1;
-				var _p11 = {
+				var _p18 = _p6._0;
+				var _p15 = A2(_user$project$ParticipantQueue$update, _p18, model.queue);
+				var newQueueState = _p15._0;
+				var queueCmds = _p15._1;
+				var _p16 = {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{queue: newQueueState}),
 					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queueCmds)
 				};
-				var newModel = _p11._0;
-				var cmd = _p11._1;
-				var _p12 = _p13;
-				if (_p12.ctor === 'GotFocus') {
+				var newModel = _p16._0;
+				var cmd = _p16._1;
+				var _p17 = _p18;
+				if (_p17.ctor === 'GotFocus') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
@@ -10857,8 +11048,15 @@ var _user$project$Main$subscriptions = function (model) {
 					_user$project$ParticipantQueue$subscriptions(model.queue)),
 				_1: {
 					ctor: '::',
-					_0: _user$project$Main$keyStrokesDispatcher,
-					_1: {ctor: '[]'}
+					_0: A2(
+						_elm_lang$core$Platform_Sub$map,
+						_user$project$Main$Clock,
+						_user$project$CooldownClock$subscriptions(model.cooldownClock)),
+					_1: {
+						ctor: '::',
+						_0: _user$project$Main$keyStrokesDispatcher,
+						_1: {ctor: '[]'}
+					}
 				}
 			}
 		});
@@ -10875,18 +11073,13 @@ var _user$project$Main$view = function (model) {
 			ctor: '::',
 			_0: A2(
 				_elm_lang$html$Html$div,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onClick(
-						_user$project$Main$Focus(_user$project$Main$TheClock)),
-					_1: {ctor: '[]'}
-				},
+				{ctor: '[]'},
 				{
 					ctor: '::',
 					_0: A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$Clock,
-						_user$project$Clock$view(model.countdownClock)),
+						_user$project$CooldownClock$view(model.cooldownClock)),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -10895,28 +11088,47 @@ var _user$project$Main$view = function (model) {
 					_elm_lang$html$Html$div,
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$id('queue'),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(
-								_user$project$Main$Focus(_user$project$Main$TheQueue)),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html_Events$onFocus(
-									_user$project$Main$Focus(_user$project$Main$TheQueue)),
-								_1: {ctor: '[]'}
-							}
-						}
+						_0: _elm_lang$html$Html_Events$onClick(
+							_user$project$Main$Focus(_user$project$Main$TheClock)),
+						_1: {ctor: '[]'}
 					},
 					{
 						ctor: '::',
 						_0: A2(
 							_elm_lang$html$Html$map,
-							_user$project$Main$Queue,
-							_user$project$ParticipantQueue$view(model.queue)),
+							_user$project$Main$Clock,
+							_user$project$Clock$view(model.countdownClock)),
 						_1: {ctor: '[]'}
 					}),
-				_1: {ctor: '[]'}
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$div,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$id('queue'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onClick(
+									_user$project$Main$Focus(_user$project$Main$TheQueue)),
+								_1: {
+									ctor: '::',
+									_0: _elm_lang$html$Html_Events$onFocus(
+										_user$project$Main$Focus(_user$project$Main$TheQueue)),
+									_1: {ctor: '[]'}
+								}
+							}
+						},
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$map,
+								_user$project$Main$Queue,
+								_user$project$ParticipantQueue$view(model.queue)),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
 			}
 		});
 };

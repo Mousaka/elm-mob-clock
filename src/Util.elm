@@ -1,7 +1,14 @@
-module Util exposing (toMinSec, removeNonNumerals)
+module Util exposing (toMinSec, removeNonNumerals, msgAsCmd)
 
 import String exposing (slice, right, filter)
+import Task exposing (perform, succeed)
 import Char exposing (isDigit)
+
+
+msgAsCmd : msg -> Cmd msg
+msgAsCmd msg =
+    Task.perform (\_ -> msg) (succeed msg)
+
 
 
 -- UTIL
