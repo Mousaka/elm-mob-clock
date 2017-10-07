@@ -1,14 +1,11 @@
-module ParticipantQueue exposing (Model, Msg(Next, EnterPress, GotFocus), init, update, view, subscriptions)
+module ParticipantQueue exposing (Model, Msg(EnterPress, GotFocus, Next), init, subscriptions, update, view)
 
-import Styling exposing (..)
-import Html exposing (Html, div, button, input, Attribute)
-import Html exposing (program)
-import Html exposing (Html, div, button, input, Attribute)
-import Html.Events exposing (..)
+import Html exposing (Attribute, Html, button, div, input, program)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
-import Svg exposing (..)
+import Html.Events exposing (..)
 import String exposing (..)
+import Styling exposing (..)
+import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
 
@@ -62,7 +59,7 @@ update msg model =
                         participants_ =
                             List.append model.participants [ name ]
                     in
-                        ( { model | participants = participants_, fieldText = "" }, Cmd.none )
+                    ( { model | participants = participants_, fieldText = "" }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -83,12 +80,12 @@ rotateQueue participants =
         ( head, tail ) =
             ( List.head participants, List.tail participants )
     in
-        case ( head, tail ) of
-            ( Just h, Just t ) ->
-                List.append t [ h ]
+    case ( head, tail ) of
+        ( Just h, Just t ) ->
+            List.append t [ h ]
 
-            _ ->
-                participants
+        _ ->
+            participants
 
 
 

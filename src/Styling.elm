@@ -29,7 +29,7 @@ queueInput =
 
 
 textStyle size =
-    [ ( "font-size", (toString size) ++ "px" )
+    [ ( "font-size", toString size ++ "px" )
     , ( "font-family", "Arial" )
     , ( "text-align", "center" )
     ]

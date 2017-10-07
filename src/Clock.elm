@@ -1,18 +1,16 @@
-port module Clock exposing (inputOrDisplayTime, displayTime, Model, Msg(Start, StartNext, Finish, EnterPress, GotFocus, Tick), ClockState(..), init, update, view, subscriptions)
+port module Clock exposing (ClockState(..), Model, Msg(EnterPress, Finish, GotFocus, Start, StartNext, Tick), displayTime, init, inputOrDisplayTime, subscriptions, update, view)
 
-import Styling exposing (..)
-import Util exposing (toMinSec, msgAsCmd)
-import Html exposing (Html, div, button, input, Attribute)
-import Html.Events exposing (..)
-import Html exposing (program)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
-import Svg exposing (..)
-import String exposing (toFloat, slice, right, length)
-import Svg.Attributes exposing (..)
-import Time exposing (Time, second)
-import Task exposing (perform, succeed)
 import Dom exposing (..)
+import Html exposing (Attribute, Html, button, div, input, program)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+import String exposing (length, right, slice, toFloat)
+import Styling exposing (..)
+import Svg exposing (..)
+import Svg.Attributes exposing (..)
+import Task exposing (perform, succeed)
+import Time exposing (Time, second)
+import Util exposing (msgAsCmd, toMinSec)
 
 
 main : Program Never Model Msg
@@ -85,7 +83,7 @@ update msg model =
         Tick _ ->
             case model.time of
                 1 ->
-                    update SoundAlarm ({ model | time = model.time - 1 })
+                    update SoundAlarm { model | time = model.time - 1 }
 
                 0 ->
                     ( model, Task.perform (\_ -> Finish) finishCmd )
@@ -180,7 +178,7 @@ displaySec t =
 
 displayTime : Int -> String
 displayTime time =
-    displayMin time ++ ":" ++ (displaySec time)
+    displayMin time ++ ":" ++ displaySec time
 
 
 displayUnitsOfTime : Int -> String
@@ -189,12 +187,12 @@ displayUnitsOfTime time =
         unitsToDisplay =
             toString time
     in
-        case (length unitsToDisplay) of
-            1 ->
-                "0" ++ unitsToDisplay
+    case length unitsToDisplay of
+        1 ->
+            "0" ++ unitsToDisplay
 
-            _ ->
-                unitsToDisplay
+        _ ->
+            unitsToDisplay
 
 
 view : Model -> Html Msg
@@ -212,12 +210,12 @@ view model =
         resetButton =
             resetB model.clockState
     in
-        div [ Html.Attributes.id "clock" ]
-            [ div [ flexMiddle ] [ clock model.time ]
-            , div [ flexMiddle ] [ text message ]
-            , div [ flexMiddle ] [ timeField ]
-            , div [ flexMiddle ] [ startPauseResumeButton, resetButton ]
-            ]
+    div [ Html.Attributes.id "clock" ]
+        [ div [ flexMiddle ] [ clock model.time ]
+        , div [ flexMiddle ] [ text message ]
+        , div [ flexMiddle ] [ timeField ]
+        , div [ flexMiddle ] [ startPauseResumeButton, resetButton ]
+        ]
 
 
 statusText : ClockState -> String
@@ -301,11 +299,11 @@ clock time =
         minutesHandlerTip =
             ( 50 + 38 * cos minutesAngle, 50 + 38 * sin minutesAngle )
     in
-        svg [ viewBox "0 0 100 100", Svg.Attributes.width "250px" ]
-            [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
-            , clockHandle minutesHandlerTip "#000000"
-            , clockHandle secondHandlerTip "#F0F8FF"
-            ]
+    svg [ viewBox "0 0 100 100", Svg.Attributes.width "250px" ]
+        [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
+        , clockHandle minutesHandlerTip "#000000"
+        , clockHandle secondHandlerTip "#F0F8FF"
+        ]
 
 
 clockHandle : ( Float, Float ) -> String -> Svg Msg
@@ -314,7 +312,7 @@ clockHandle coords colour =
         ( x, y ) =
             coords
     in
-        line [ x1 "50", y1 "50", x2 (toString x), y2 (toString y), stroke colour ] []
+    line [ x1 "50", y1 "50", x2 (toString x), y2 (toString y), stroke colour ] []
 
 
 angleHelper : Float -> Int -> Float

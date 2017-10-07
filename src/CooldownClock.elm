@@ -1,11 +1,10 @@
-module CooldownClock exposing (init, update, subscriptions, view, Model(..))
+module CooldownClock exposing (Model(..), init, subscriptions, update, view)
 
-import Util exposing (msgAsCmd)
-import Html exposing (program)
+import Clock exposing (ClockState(..), Msg(Finish, Start, StartNext, Tick), displayTime, inputOrDisplayTime)
+import Html exposing (Attribute, Html, button, div, input, program)
 import Html.Attributes exposing (hidden)
-import Html exposing (Html, div, button, input, Attribute)
-import Clock exposing (ClockState(..), Msg(Start, StartNext, Finish, Tick), inputOrDisplayTime, displayTime)
 import Time exposing (Time, second)
+import Util exposing (msgAsCmd)
 
 
 type Model
@@ -59,7 +58,7 @@ view model =
                 timeField =
                     inputOrDisplayTime m.clockState <| displayTime m.time
             in
-                div [ hidden (m.clockState /= Running) ] [ timeField ]
+            div [ hidden (m.clockState /= Running) ] [ timeField ]
 
         Deactivated ->
             div [] []

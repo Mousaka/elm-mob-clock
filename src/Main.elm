@@ -2,13 +2,12 @@ module Main exposing (..)
 
 import Clock exposing (..)
 import CooldownClock exposing (..)
-import ParticipantQueue exposing (..)
-import Styling exposing (..)
-import Html exposing (program)
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, program, text)
 import Html.Attributes exposing (id)
 import Html.Events exposing (onClick, onFocus)
 import Keyboard
+import ParticipantQueue exposing (..)
+import Styling exposing (..)
 
 
 main : Program Never Model Msg
@@ -75,14 +74,14 @@ update message model =
                                 ( newClockModel, clockCmds ) =
                                     Clock.update Clock.EnterPress model.countdownClock
                             in
-                                ( { model | countdownClock = newClockModel }, Cmd.map Clock clockCmds )
+                            ( { model | countdownClock = newClockModel }, Cmd.map Clock clockCmds )
 
                         TheQueue ->
                             let
                                 ( newParticipantQueue, clockCmds ) =
                                     ParticipantQueue.update ParticipantQueue.EnterPress model.queue
                             in
-                                ( { model | queue = newParticipantQueue }, Cmd.map Queue clockCmds )
+                            ( { model | queue = newParticipantQueue }, Cmd.map Queue clockCmds )
 
                 _ ->
                     ( model, Cmd.none )
@@ -106,12 +105,12 @@ update message model =
                         ( newCooldownClockModel, cooldownClockCmd ) =
                             CooldownClock.update msg model.cooldownClock
                     in
-                        ( { model
-                            | countdownClock = newClockModel
-                            , cooldownClock = newCooldownClockModel
-                          }
-                        , Cmd.map Clock clockCmds
-                        )
+                    ( { model
+                        | countdownClock = newClockModel
+                        , cooldownClock = newCooldownClockModel
+                      }
+                    , Cmd.map Clock clockCmds
+                    )
 
         Queue msg ->
             let
@@ -121,12 +120,12 @@ update message model =
                 ( newModel, cmd ) =
                     ( { model | queue = newQueueState }, Cmd.map Queue queueCmds )
             in
-                case msg of
-                    ParticipantQueue.GotFocus ->
-                        ( { newModel | inFocus = TheQueue }, cmd )
+            case msg of
+                ParticipantQueue.GotFocus ->
+                    ( { newModel | inFocus = TheQueue }, cmd )
 
-                    _ ->
-                        ( newModel, cmd )
+                _ ->
+                    ( newModel, cmd )
 
 
 whoToTick : Clock.Msg -> Model -> ( Model, Cmd Msg )
@@ -136,7 +135,7 @@ whoToTick msg model =
             ( newState, newCmd ) =
                 Clock.update msg model.countdownClock
         in
-            ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
+        ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
     else
         case model.cooldownClock of
             Active m ->
@@ -145,7 +144,7 @@ whoToTick msg model =
                         ( newState, newCmd ) =
                             CooldownClock.update msg model.cooldownClock
                     in
-                        ( { model | cooldownClock = newState }, Cmd.map Clock newCmd )
+                    ( { model | cooldownClock = newState }, Cmd.map Clock newCmd )
                 else
                     ( model, Cmd.none )
 
@@ -184,7 +183,7 @@ updateClockWithQueueRoation msg model =
                 , cooldownClock = newCooldownClockModel
             }
     in
-        ( model_, batchedCmds )
+    ( model_, batchedCmds )
 
 
 

@@ -1,8 +1,8 @@
-module Util exposing (toMinSec, removeNonNumerals, msgAsCmd)
+module Util exposing (msgAsCmd, removeNonNumerals, toMinSec)
 
-import String exposing (slice, right, filter)
-import Task exposing (perform, succeed)
 import Char exposing (isDigit)
+import String exposing (filter, right, slice)
+import Task exposing (perform, succeed)
 
 
 msgAsCmd : msg -> Cmd msg
@@ -38,15 +38,15 @@ numSlicer textTime =
         minSec =
             ( toParsedTime mins, toParsedTime sec )
     in
-        case minSec of
-            ( Nothing, Just seconds ) ->
-                Just seconds
+    case minSec of
+        ( Nothing, Just seconds ) ->
+            Just seconds
 
-            ( Just minutes, Just seconds ) ->
-                Just (60 * minutes + seconds)
+        ( Just minutes, Just seconds ) ->
+            Just (60 * minutes + seconds)
 
-            _ ->
-                Nothing
+        _ ->
+            Nothing
 
 
 toParsedTime : String -> Maybe Int
