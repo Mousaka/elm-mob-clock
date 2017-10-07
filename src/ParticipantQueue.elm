@@ -1,4 +1,4 @@
-module ParticipantQueue exposing (Model, Msg(EnterPress, GotFocus, Next), init, subscriptions, update, view)
+port module ParticipantQueue exposing (Model, Msg(EnterPress, GotFocus, Next), init, subscriptions, update, view)
 
 import Html exposing (Attribute, Html, button, div, input, program)
 import Html.Attributes exposing (..)
@@ -68,7 +68,11 @@ update msg model =
             ( { model | fieldText = inputText }, Cmd.none )
 
         Next ->
-            ( { model | participants = rotateQueue model.participants }, Cmd.none )
+            let
+                rotatedQueue =
+                    rotateQueue model.participants
+            in
+            ( { model | participants = rotatedQueue }, notifyNext (Maybe.withDefault "" (List.head rotatedQueue)) )
 
         GotFocus ->
             ( model, Cmd.none )
@@ -95,6 +99,13 @@ rotateQueue participants =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
+
+
+
+-- PORTS
+
+
+port notifyNext : String -> Cmd msg
 
 
 

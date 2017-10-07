@@ -10455,6 +10455,11 @@ var _user$project$ParticipantQueue$init = {
 	participants: {ctor: '[]'},
 	fieldText: ''
 };
+var _user$project$ParticipantQueue$notifyNext = _elm_lang$core$Native_Platform.outgoingPort(
+	'notifyNext',
+	function (v) {
+		return v;
+	});
 var _user$project$ParticipantQueue$Model = F2(
 	function (a, b) {
 		return {participants: a, fieldText: b};
@@ -10699,14 +10704,17 @@ var _user$project$ParticipantQueue$update = F2(
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				case 'Next':
+					var rotatedQueue = _user$project$ParticipantQueue$rotateQueue(model.participants);
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{
-								participants: _user$project$ParticipantQueue$rotateQueue(model.participants)
-							}),
-						_1: _elm_lang$core$Platform_Cmd$none
+							{participants: rotatedQueue}),
+						_1: _user$project$ParticipantQueue$notifyNext(
+							A2(
+								_elm_lang$core$Maybe$withDefault,
+								'',
+								_elm_lang$core$List$head(rotatedQueue)))
 					};
 				default:
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
