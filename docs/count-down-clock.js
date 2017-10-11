@@ -9703,18 +9703,34 @@ var _user$project$Clock$displayTimer = function (displayableTime) {
 			_1: {ctor: '[]'}
 		});
 };
-var _user$project$Clock$statusText = function (clockState) {
-	var _p1 = clockState;
-	if (_p1.ctor === 'Finished') {
-		return 'Time is up!';
+var _user$project$Clock$statusText = function (model) {
+	var _p1 = model;
+	if (_p1.ctor === 'Idle') {
+		var _p2 = _p1._0.clockState;
+		if (_p2.ctor === 'Finished') {
+			return 'Time is up!';
+		} else {
+			return '';
+		}
 	} else {
 		return '';
 	}
 };
+var _user$project$Clock$getTime = function (model) {
+	var _p3 = model;
+	switch (_p3.ctor) {
+		case 'Idle':
+			return _p3._0.duration;
+		case 'Paused':
+			return _p3._0.timeLeft;
+		default:
+			return _p3._0.timeLeft;
+	}
+};
 var _user$project$Clock$displayUnitsOfTime = function (time) {
 	var unitsToDisplay = _elm_lang$core$Basics$toString(time);
-	var _p2 = _elm_lang$core$String$length(unitsToDisplay);
-	if (_p2 === 1) {
+	var _p4 = _elm_lang$core$String$length(unitsToDisplay);
+	if (_p4 === 1) {
 		return A2(_elm_lang$core$Basics_ops['++'], '0', unitsToDisplay);
 	} else {
 		return unitsToDisplay;
@@ -9736,22 +9752,164 @@ var _user$project$Clock$displayTime = function (time) {
 			':',
 			_user$project$Clock$displaySec(time)));
 };
+var _user$project$Clock$getDuration = function (model) {
+	var _p5 = model;
+	switch (_p5.ctor) {
+		case 'Running':
+			return _p5._0.duration;
+		case 'Idle':
+			return _p5._0.duration;
+		default:
+			return _p5._0.duration;
+	}
+};
 var _user$project$Clock$alarm = _elm_lang$core$Native_Platform.outgoingPort(
 	'alarm',
 	function (v) {
 		return null;
 	});
-var _user$project$Clock$Model = F3(
-	function (a, b, c) {
-		return {time: a, resetTime: b, clockState: c};
-	});
 var _user$project$Clock$Finished = {ctor: 'Finished'};
-var _user$project$Clock$Paused = {ctor: 'Paused'};
-var _user$project$Clock$Running = {ctor: 'Running'};
 var _user$project$Clock$Stopped = {ctor: 'Stopped'};
-var _user$project$Clock$init = {time: 60 * 10, resetTime: 60 * 10, clockState: _user$project$Clock$Stopped};
+var _user$project$Clock$Paused = function (a) {
+	return {ctor: 'Paused', _0: a};
+};
+var _user$project$Clock$pause = F2(
+	function (model, time) {
+		var _p6 = model;
+		switch (_p6.ctor) {
+			case 'Idle':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			case 'Paused':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				var _p7 = _p6._0;
+				return {
+					ctor: '_Tuple2',
+					_0: _user$project$Clock$Paused(
+						{duration: _p7.duration, pauseStart: time, originalStart: _p7.startTime, timeLeft: _p7.timeLeft}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+		}
+	});
+var _user$project$Clock$Running = function (a) {
+	return {ctor: 'Running', _0: a};
+};
+var _user$project$Clock$unpause = F2(
+	function (model, time) {
+		var _p8 = model;
+		if (_p8.ctor === 'Paused') {
+			var _p9 = _p8._0;
+			return {
+				ctor: '_Tuple2',
+				_0: _user$project$Clock$Running(
+					{duration: _p9.duration, startTime: _p9.originalStart + (_p9.pauseStart - _p9.originalStart), timeLeft: _p9.timeLeft}),
+				_1: _elm_lang$core$Platform_Cmd$none
+			};
+		} else {
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
+var _user$project$Clock$Idle = function (a) {
+	return {ctor: 'Idle', _0: a};
+};
+var _user$project$Clock$init = _user$project$Clock$Idle(
+	{duration: 60 * 10, clockState: _user$project$Clock$Stopped, timeLeft: 60 * 10});
+var _user$project$Clock$finish = function (model) {
+	var _p10 = model;
+	if (_p10.ctor === 'Running') {
+		var _p11 = _p10._0;
+		return {
+			ctor: '_Tuple2',
+			_0: _user$project$Clock$Idle(
+				{duration: _p11.duration, clockState: _user$project$Clock$Finished, timeLeft: _p11.timeLeft}),
+			_1: _user$project$Clock$alarm(
+				{ctor: '_Tuple0'})
+		};
+	} else {
+		return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+	}
+};
+var _user$project$Clock$timeTick = F2(
+	function (model, time) {
+		var _p12 = model;
+		switch (_p12.ctor) {
+			case 'Running':
+				var _p14 = _p12._0;
+				var _p13 = _elm_lang$core$Native_Utils.cmp(
+					_p14.startTime + _elm_lang$core$Basics$toFloat(_p14.duration * 1000),
+					time) > 0;
+				if (_p13 === true) {
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Clock$Running(
+							_elm_lang$core$Native_Utils.update(
+								_p14,
+								{
+									timeLeft: _elm_lang$core$Basics$round(
+										((_elm_lang$core$Basics$toFloat(_p14.duration) * 1000) - (time - _p14.startTime)) / 1000)
+								})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				} else {
+					return _user$project$Clock$finish(model);
+				}
+			case 'Idle':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
+var _user$project$Clock$setTimer = F2(
+	function (model, newTime) {
+		var _p15 = _user$project$Util$toMinSec(newTime);
+		if (_p15.ctor === 'Just') {
+			var _p17 = _p15._0;
+			var _p16 = model;
+			switch (_p16.ctor) {
+				case 'Idle':
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Clock$Idle(
+							_elm_lang$core$Native_Utils.update(
+								_p16._0,
+								{duration: _p17})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'Paused':
+					return {
+						ctor: '_Tuple2',
+						_0: _user$project$Clock$Paused(
+							_elm_lang$core$Native_Utils.update(
+								_p16._0,
+								{duration: _p17})),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				default:
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			}
+		} else {
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
 var _user$project$Clock$FocusResult = function (a) {
 	return {ctor: 'FocusResult', _0: a};
+};
+var _user$project$Clock$reset = function (model) {
+	var _p18 = model;
+	if (_p18.ctor === 'Paused') {
+		var _p19 = _p18._0;
+		return {
+			ctor: '_Tuple2',
+			_0: _user$project$Clock$Idle(
+				{clockState: _user$project$Clock$Stopped, duration: _p19.duration, timeLeft: _p19.duration}),
+			_1: A2(
+				_elm_lang$core$Task$attempt,
+				_user$project$Clock$FocusResult,
+				_elm_lang$dom$Dom$focus('clock'))
+		};
+	} else {
+		return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+	}
 };
 var _user$project$Clock$EnterPress = {ctor: 'EnterPress'};
 var _user$project$Clock$SetTimer = function (a) {
@@ -9781,9 +9939,9 @@ var _user$project$Clock$timerInput = function (currentTime) {
 		},
 		{ctor: '[]'});
 };
-var _user$project$Clock$inputOrDisplayTime = function (clockState) {
-	var _p3 = clockState;
-	switch (_p3.ctor) {
+var _user$project$Clock$inputOrDisplayTime = function (model) {
+	var _p20 = model;
+	switch (_p20.ctor) {
 		case 'Paused':
 			return _user$project$Clock$displayTimer;
 		case 'Running':
@@ -9794,13 +9952,97 @@ var _user$project$Clock$inputOrDisplayTime = function (clockState) {
 };
 var _user$project$Clock$Finish = {ctor: 'Finish'};
 var _user$project$Clock$finishCmd = _elm_lang$core$Task$succeed(_user$project$Clock$Finish);
-var _user$project$Clock$Unpause = {ctor: 'Unpause'};
-var _user$project$Clock$Pause = {ctor: 'Pause'};
+var _user$project$Clock$Unpause = function (a) {
+	return {ctor: 'Unpause', _0: a};
+};
+var _user$project$Clock$Pause = function (a) {
+	return {ctor: 'Pause', _0: a};
+};
+var _user$project$Clock$timeToPause = function (model) {
+	var _p21 = model;
+	switch (_p21.ctor) {
+		case 'Idle':
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		case 'Paused':
+			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		default:
+			return {
+				ctor: '_Tuple2',
+				_0: model,
+				_1: _elm_lang$core$Platform_Cmd$batch(
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$core$Task$attempt,
+							_user$project$Clock$FocusResult,
+							_elm_lang$dom$Dom$focus('clock')),
+						_1: {
+							ctor: '::',
+							_0: A2(_elm_lang$core$Task$perform, _user$project$Clock$Pause, _elm_lang$core$Time$now),
+							_1: {ctor: '[]'}
+						}
+					})
+			};
+	}
+};
 var _user$project$Clock$Reset = {ctor: 'Reset'};
 var _user$project$Clock$StartNext = {ctor: 'StartNext'};
-var _user$project$Clock$resetB = function (clockState) {
-	var _p4 = clockState;
-	switch (_p4.ctor) {
+var _user$project$Clock$resetB = function (model) {
+	var _p22 = model;
+	switch (_p22.ctor) {
+		case 'Idle':
+			var _p23 = _p22._0.clockState;
+			if (_p23.ctor === 'Stopped') {
+				return A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Reset),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$hidden(true),
+								_1: {
+									ctor: '::',
+									_0: _user$project$Styling$myButton,
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$svg$Svg$text('Reset'),
+						_1: {ctor: '[]'}
+					});
+			} else {
+				return A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$id('startButton'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$StartNext),
+								_1: {
+									ctor: '::',
+									_0: _user$project$Styling$myButton,
+									_1: {ctor: '[]'}
+								}
+							}
+						}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$svg$Svg$text('Start next'),
+						_1: {ctor: '[]'}
+					});
+			}
 		case 'Paused':
 			return A2(
 				_elm_lang$html$Html$button,
@@ -9824,31 +10066,6 @@ var _user$project$Clock$resetB = function (clockState) {
 				{
 					ctor: '::',
 					_0: _elm_lang$svg$Svg$text('Reset'),
-					_1: {ctor: '[]'}
-				});
-		case 'Finished':
-			return A2(
-				_elm_lang$html$Html$button,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$id('startButton'),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$StartNext),
-							_1: {
-								ctor: '::',
-								_0: _user$project$Styling$myButton,
-								_1: {ctor: '[]'}
-							}
-						}
-					}
-				},
-				{
-					ctor: '::',
-					_0: _elm_lang$svg$Svg$text('Start next'),
 					_1: {ctor: '[]'}
 				});
 		default:
@@ -9878,163 +10095,12 @@ var _user$project$Clock$resetB = function (clockState) {
 				});
 	}
 };
-var _user$project$Clock$Start = {ctor: 'Start'};
-var _user$project$Clock$update = F2(
-	function (msg, model) {
-		update:
-		while (true) {
-			var _p5 = msg;
-			switch (_p5.ctor) {
-				case 'Tick':
-					var _p6 = model.time;
-					switch (_p6) {
-						case 1:
-							var _v6 = _user$project$Clock$SoundAlarm,
-								_v7 = _elm_lang$core$Native_Utils.update(
-								model,
-								{time: model.time - 1});
-							msg = _v6;
-							model = _v7;
-							continue update;
-						case 0:
-							return {
-								ctor: '_Tuple2',
-								_0: model,
-								_1: A2(
-									_elm_lang$core$Task$perform,
-									function (_p7) {
-										return _user$project$Clock$Finish;
-									},
-									_user$project$Clock$finishCmd)
-							};
-						default:
-							return {
-								ctor: '_Tuple2',
-								_0: _elm_lang$core$Native_Utils.update(
-									model,
-									{time: model.time - 1}),
-								_1: _elm_lang$core$Platform_Cmd$none
-							};
-					}
-				case 'Start':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Running}),
-						_1: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Clock$FocusResult,
-							_elm_lang$dom$Dom$focus('clock'))
-					};
-				case 'StartNext':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Stopped, time: model.resetTime}),
-						_1: _user$project$Util$msgAsCmd(_user$project$Clock$Start)
-					};
-				case 'Reset':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Stopped, time: model.resetTime}),
-						_1: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Clock$FocusResult,
-							_elm_lang$dom$Dom$focus('clock'))
-					};
-				case 'Pause':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Paused}),
-						_1: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Clock$FocusResult,
-							_elm_lang$dom$Dom$focus('clock'))
-					};
-				case 'Unpause':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Running}),
-						_1: A2(
-							_elm_lang$core$Task$attempt,
-							_user$project$Clock$FocusResult,
-							_elm_lang$dom$Dom$focus('clock'))
-					};
-				case 'Finish':
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{clockState: _user$project$Clock$Finished}),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'SoundAlarm':
-					return {
-						ctor: '_Tuple2',
-						_0: model,
-						_1: _user$project$Clock$alarm(
-							{ctor: '_Tuple0'})
-					};
-				case 'SetTimer':
-					var _p8 = _user$project$Util$toMinSec(_p5._0);
-					if (_p8.ctor === 'Just') {
-						var _p9 = _p8._0;
-						return {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{resetTime: _p9, time: _p9}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-					}
-				case 'EnterPress':
-					var _p10 = model.clockState;
-					switch (_p10.ctor) {
-						case 'Running':
-							var _v10 = _user$project$Clock$Pause,
-								_v11 = model;
-							msg = _v10;
-							model = _v11;
-							continue update;
-						case 'Finished':
-							var _v12 = _user$project$Clock$StartNext,
-								_v13 = model;
-							msg = _v12;
-							model = _v13;
-							continue update;
-						case 'Stopped':
-							var _v14 = _user$project$Clock$Start,
-								_v15 = model;
-							msg = _v14;
-							model = _v15;
-							continue update;
-						default:
-							var _v16 = _user$project$Clock$Start,
-								_v17 = model;
-							msg = _v16;
-							model = _v17;
-							continue update;
-					}
-				case 'FocusResult':
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-				default:
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			}
-		}
-	});
-var _user$project$Clock$startPauseResumeB = function (clockState) {
-	var _p11 = clockState;
-	switch (_p11.ctor) {
+var _user$project$Clock$TimeToUnpause = {ctor: 'TimeToUnpause'};
+var _user$project$Clock$TimeToPause = {ctor: 'TimeToPause'};
+var _user$project$Clock$TimeToStart = {ctor: 'TimeToStart'};
+var _user$project$Clock$startPauseResumeB = function (model) {
+	var _p24 = model;
+	switch (_p24.ctor) {
 		case 'Paused':
 			return A2(
 				_elm_lang$html$Html$button,
@@ -10046,7 +10112,7 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 						_0: _elm_lang$html$Html_Attributes$id('startButton'),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Unpause),
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$TimeToUnpause),
 							_1: {
 								ctor: '::',
 								_0: _user$project$Styling$myButton,
@@ -10071,7 +10137,7 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 						_0: _elm_lang$html$Html_Attributes$id('startButton'),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Pause),
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$TimeToPause),
 							_1: {
 								ctor: '::',
 								_0: _user$project$Styling$myButton,
@@ -10085,54 +10151,58 @@ var _user$project$Clock$startPauseResumeB = function (clockState) {
 					_0: _elm_lang$svg$Svg$text('Pause'),
 					_1: {ctor: '[]'}
 				});
-		case 'Finished':
-			return A2(
-				_elm_lang$html$Html$button,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$hidden(true),
-					_1: {
-						ctor: '::',
-						_0: _user$project$Styling$myButton,
-						_1: {ctor: '[]'}
-					}
-				},
-				{ctor: '[]'});
 		default:
-			return A2(
-				_elm_lang$html$Html$button,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
-					_1: {
+			var _p25 = _p24._0.clockState;
+			if (_p25.ctor === 'Finished') {
+				return A2(
+					_elm_lang$html$Html$button,
+					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Attributes$id('startButton'),
+						_0: _elm_lang$html$Html_Attributes$hidden(true),
 						_1: {
 							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$Start),
+							_0: _user$project$Styling$myButton,
+							_1: {ctor: '[]'}
+						}
+					},
+					{ctor: '[]'});
+			} else {
+				return A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onFocus(_user$project$Clock$GotFocus),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$id('startButton'),
 							_1: {
 								ctor: '::',
-								_0: _user$project$Styling$myButton,
-								_1: {ctor: '[]'}
+								_0: _elm_lang$html$Html_Events$onClick(_user$project$Clock$TimeToStart),
+								_1: {
+									ctor: '::',
+									_0: _user$project$Styling$myButton,
+									_1: {ctor: '[]'}
+								}
 							}
 						}
-					}
-				},
-				{
-					ctor: '::',
-					_0: _elm_lang$svg$Svg$text('Start'),
-					_1: {ctor: '[]'}
-				});
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$svg$Svg$text('Start'),
+						_1: {ctor: '[]'}
+					});
+			}
 	}
 };
 var _user$project$Clock$view = function (model) {
-	var resetButton = _user$project$Clock$resetB(model.clockState);
-	var startPauseResumeButton = _user$project$Clock$startPauseResumeB(model.clockState);
+	var resetButton = _user$project$Clock$resetB(model);
+	var startPauseResumeButton = _user$project$Clock$startPauseResumeB(model);
 	var timeField = A2(
 		_user$project$Clock$inputOrDisplayTime,
-		model.clockState,
-		_user$project$Clock$displayTime(model.time));
-	var message = _user$project$Clock$statusText(model.clockState);
+		model,
+		_user$project$Clock$displayTime(
+			_user$project$Clock$getTime(model)));
+	var message = _user$project$Clock$statusText(model);
 	return A2(
 		_elm_lang$html$Html$div,
 		{
@@ -10151,7 +10221,8 @@ var _user$project$Clock$view = function (model) {
 				},
 				{
 					ctor: '::',
-					_0: _user$project$Clock$clock(model.time),
+					_0: _user$project$Clock$clock(
+						_user$project$Clock$getTime(model)),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -10206,15 +10277,139 @@ var _user$project$Clock$view = function (model) {
 			}
 		});
 };
+var _user$project$Clock$Start = function (a) {
+	return {ctor: 'Start', _0: a};
+};
+var _user$project$Clock$timeToStart = function (model) {
+	var _p26 = model;
+	if (_p26.ctor === 'Running') {
+		return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+	} else {
+		return {
+			ctor: '_Tuple2',
+			_0: model,
+			_1: A2(_elm_lang$core$Task$perform, _user$project$Clock$Start, _elm_lang$core$Time$now)
+		};
+	}
+};
+var _user$project$Clock$update = F2(
+	function (msg, model) {
+		var _p27 = msg;
+		switch (_p27.ctor) {
+			case 'Tick':
+				return A2(_user$project$Clock$timeTick, model, _p27._0);
+			case 'TimeToStart':
+				return _user$project$Clock$timeToStart(model);
+			case 'StartNext':
+				var _p28 = _user$project$Clock$reset(model);
+				var m = _p28._0;
+				var c = _p28._1;
+				var _p29 = _user$project$Clock$timeToStart(m);
+				var m2 = _p29._0;
+				var c2 = _p29._1;
+				return {
+					ctor: '_Tuple2',
+					_0: m2,
+					_1: _elm_lang$core$Platform_Cmd$batch(
+						{
+							ctor: '::',
+							_0: c,
+							_1: {
+								ctor: '::',
+								_0: c2,
+								_1: {ctor: '[]'}
+							}
+						})
+				};
+			case 'Start':
+				var _p30 = model;
+				switch (_p30.ctor) {
+					case 'Idle':
+						var _p31 = _p30._0;
+						return {
+							ctor: '_Tuple2',
+							_0: _user$project$Clock$Running(
+								{startTime: _p27._0, duration: _p31.duration, timeLeft: _p31.timeLeft}),
+							_1: A2(
+								_elm_lang$core$Task$attempt,
+								_user$project$Clock$FocusResult,
+								_elm_lang$dom$Dom$focus('clock'))
+						};
+					case 'Running':
+						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+					default:
+						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+			case 'Reset':
+				return _user$project$Clock$reset(model);
+			case 'TimeToPause':
+				return _user$project$Clock$timeToPause(model);
+			case 'Pause':
+				return A2(_user$project$Clock$pause, model, _p27._0);
+			case 'TimeToUnpause':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _elm_lang$core$Platform_Cmd$batch(
+						{
+							ctor: '::',
+							_0: A2(
+								_elm_lang$core$Task$attempt,
+								_user$project$Clock$FocusResult,
+								_elm_lang$dom$Dom$focus('clock')),
+							_1: {
+								ctor: '::',
+								_0: A2(_elm_lang$core$Task$perform, _user$project$Clock$Unpause, _elm_lang$core$Time$now),
+								_1: {ctor: '[]'}
+							}
+						})
+				};
+			case 'Unpause':
+				return A2(_user$project$Clock$unpause, model, _p27._0);
+			case 'Finish':
+				return _user$project$Clock$finish(model);
+			case 'SoundAlarm':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _user$project$Clock$alarm(
+						{ctor: '_Tuple0'})
+				};
+			case 'SetTimer':
+				return A2(_user$project$Clock$setTimer, model, _p27._0);
+			case 'EnterPress':
+				var _p32 = model;
+				switch (_p32.ctor) {
+					case 'Running':
+						return _user$project$Clock$timeToPause(model);
+					case 'Idle':
+						var _p33 = _p32._0.clockState;
+						if (_p33.ctor === 'Finished') {
+							return _user$project$Clock$timeToStart(model);
+						} else {
+							return _user$project$Clock$timeToStart(model);
+						}
+					default:
+						return _user$project$Clock$timeToStart(model);
+				}
+			case 'FocusResult':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
 var _user$project$Clock$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
 var _user$project$Clock$subscriptions = function (model) {
-	var _p12 = model.clockState;
-	if (_p12.ctor === 'Running') {
-		return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
-	} else {
-		return _elm_lang$core$Platform_Sub$none;
+	var _p34 = model;
+	switch (_p34.ctor) {
+		case 'Running':
+			return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
+		case 'Paused':
+			return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
+		default:
+			return _elm_lang$core$Platform_Sub$none;
 	}
 };
 var _user$project$Clock$main = _elm_lang$html$Html$program(
@@ -10227,130 +10422,6 @@ var _user$project$Clock$main = _elm_lang$html$Html$program(
 		update: _user$project$Clock$update,
 		subscriptions: _user$project$Clock$subscriptions
 	})();
-
-var _user$project$CooldownClock$subscriptions = function (model) {
-	var _p0 = model;
-	if (_p0.ctor === 'Active') {
-		var _p1 = _p0._0.clockState;
-		if (_p1.ctor === 'Running') {
-			return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Clock$Tick);
-		} else {
-			return _elm_lang$core$Platform_Sub$none;
-		}
-	} else {
-		return _elm_lang$core$Platform_Sub$none;
-	}
-};
-var _user$project$CooldownClock$view = function (model) {
-	var _p2 = model;
-	if (_p2.ctor === 'Active') {
-		var _p3 = _p2._0;
-		var timeField = A2(
-			_user$project$Clock$inputOrDisplayTime,
-			_p3.clockState,
-			_user$project$Clock$displayTime(_p3.time));
-		return A2(
-			_elm_lang$html$Html$div,
-			{
-				ctor: '::',
-				_0: _elm_lang$html$Html_Attributes$hidden(
-					!_elm_lang$core$Native_Utils.eq(_p3.clockState, _user$project$Clock$Running)),
-				_1: {ctor: '[]'}
-			},
-			{
-				ctor: '::',
-				_0: timeField,
-				_1: {ctor: '[]'}
-			});
-	} else {
-		return A2(
-			_elm_lang$html$Html$div,
-			{ctor: '[]'},
-			{ctor: '[]'});
-	}
-};
-var _user$project$CooldownClock$Active = function (a) {
-	return {ctor: 'Active', _0: a};
-};
-var _user$project$CooldownClock$init = _user$project$CooldownClock$Active(
-	{time: 30, resetTime: 30, clockState: _user$project$Clock$Stopped});
-var _user$project$CooldownClock$update = F2(
-	function (msg, model) {
-		var _p4 = model;
-		if (_p4.ctor === 'Active') {
-			var _p7 = _p4._0;
-			var _p5 = msg;
-			switch (_p5.ctor) {
-				case 'Finish':
-					return {
-						ctor: '_Tuple2',
-						_0: _user$project$CooldownClock$Active(
-							_elm_lang$core$Native_Utils.update(
-								_p7,
-								{clockState: _user$project$Clock$Running})),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'StartNext':
-					return {
-						ctor: '_Tuple2',
-						_0: _user$project$CooldownClock$Active(
-							_elm_lang$core$Native_Utils.update(
-								_p7,
-								{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'Start':
-					return {
-						ctor: '_Tuple2',
-						_0: _user$project$CooldownClock$Active(
-							_elm_lang$core$Native_Utils.update(
-								_p7,
-								{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-				case 'Tick':
-					var _p6 = _p7.time;
-					if (_p6 === 0) {
-						return {
-							ctor: '_Tuple2',
-							_0: _user$project$CooldownClock$Active(
-								_elm_lang$core$Native_Utils.update(
-									_p7,
-									{clockState: _user$project$Clock$Stopped, time: _p7.resetTime})),
-							_1: _user$project$Util$msgAsCmd(_user$project$Clock$StartNext)
-						};
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _user$project$CooldownClock$Active(
-								_elm_lang$core$Native_Utils.update(
-									_p7,
-									{time: _p7.time - 1})),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
-				default:
-					return {
-						ctor: '_Tuple2',
-						_0: _user$project$CooldownClock$Active(_p7),
-						_1: _elm_lang$core$Platform_Cmd$none
-					};
-			}
-		} else {
-			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-		}
-	});
-var _user$project$CooldownClock$main = _elm_lang$html$Html$program(
-	{
-		init: A2(
-			_elm_lang$core$Platform_Cmd_ops['!'],
-			_user$project$CooldownClock$init,
-			{ctor: '[]'}),
-		view: _user$project$CooldownClock$view,
-		update: _user$project$CooldownClock$update,
-		subscriptions: _user$project$CooldownClock$subscriptions
-	})();
-var _user$project$CooldownClock$Deactivated = {ctor: 'Deactivated'};
 
 var _user$project$ParticipantQueue$validInput = function (text) {
 	return (_elm_lang$core$Native_Utils.cmp(
@@ -10847,15 +10918,15 @@ var _user$project$ParticipantQueue$main = _elm_lang$html$Html$program(
 		subscriptions: _user$project$ParticipantQueue$subscriptions
 	})();
 
-var _user$project$Main$Model = F4(
-	function (a, b, c, d) {
-		return {countdownClock: a, cooldownClock: b, queue: c, inFocus: d};
+var _user$project$Main$Model = F3(
+	function (a, b, c) {
+		return {countdownClock: a, queue: b, inFocus: c};
 	});
 var _user$project$Main$TheQueue = {ctor: 'TheQueue'};
 var _user$project$Main$TheClock = {ctor: 'TheClock'};
 var _user$project$Main$init = {
 	ctor: '_Tuple2',
-	_0: {countdownClock: _user$project$Clock$init, cooldownClock: _user$project$CooldownClock$init, queue: _user$project$ParticipantQueue$init, inFocus: _user$project$Main$TheClock},
+	_0: {countdownClock: _user$project$Clock$init, queue: _user$project$ParticipantQueue$init, inFocus: _user$project$Main$TheClock},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _user$project$Main$Focus = function (a) {
@@ -10871,54 +10942,15 @@ var _user$project$Main$Queue = function (a) {
 var _user$project$Main$Clock = function (a) {
 	return {ctor: 'Clock', _0: a};
 };
-var _user$project$Main$whoToTick = F2(
-	function (msg, model) {
-		if (_elm_lang$core$Native_Utils.eq(model.countdownClock.clockState, _user$project$Clock$Running)) {
-			var _p0 = A2(_user$project$Clock$update, msg, model.countdownClock);
-			var newState = _p0._0;
-			var newCmd = _p0._1;
-			return {
-				ctor: '_Tuple2',
-				_0: _elm_lang$core$Native_Utils.update(
-					model,
-					{countdownClock: newState}),
-				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, newCmd)
-			};
-		} else {
-			var _p1 = model.cooldownClock;
-			if (_p1.ctor === 'Active') {
-				if (_elm_lang$core$Native_Utils.eq(_p1._0.clockState, _user$project$Clock$Running)) {
-					var _p2 = A2(_user$project$CooldownClock$update, msg, model.cooldownClock);
-					var newState = _p2._0;
-					var newCmd = _p2._1;
-					return {
-						ctor: '_Tuple2',
-						_0: _elm_lang$core$Native_Utils.update(
-							model,
-							{cooldownClock: newState}),
-						_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, newCmd)
-					};
-				} else {
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-				}
-			} else {
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			}
-		}
-	});
 var _user$project$Main$updateClockWithQueueRoation = F2(
 	function (msg, model) {
-		var _p3 = A2(_user$project$CooldownClock$update, msg, model.cooldownClock);
-		var newCooldownClockModel = _p3._0;
-		var cooldownClockCmd = _p3._1;
-		var mappedCooldownClockCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, cooldownClockCmd);
-		var _p4 = A2(_user$project$Clock$update, msg, model.countdownClock);
-		var newClockModel = _p4._0;
-		var clockCmd = _p4._1;
+		var _p0 = A2(_user$project$Clock$update, msg, model.countdownClock);
+		var newClockModel = _p0._0;
+		var clockCmd = _p0._1;
 		var mappedClockCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmd);
-		var _p5 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
-		var queueModel = _p5._0;
-		var queuecmd = _p5._1;
+		var _p1 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$Next, model.queue);
+		var queueModel = _p1._0;
+		var queuecmd = _p1._1;
 		var mappedQueueCmd = A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queuecmd);
 		var batchedCmds = _elm_lang$core$Platform_Cmd$batch(
 			{
@@ -10927,38 +10959,34 @@ var _user$project$Main$updateClockWithQueueRoation = F2(
 				_1: {
 					ctor: '::',
 					_0: mappedClockCmd,
-					_1: {
-						ctor: '::',
-						_0: mappedCooldownClockCmd,
-						_1: {ctor: '[]'}
-					}
+					_1: {ctor: '[]'}
 				}
 			});
 		var model_ = _elm_lang$core$Native_Utils.update(
 			model,
-			{queue: queueModel, countdownClock: newClockModel, cooldownClock: newCooldownClockModel});
+			{queue: queueModel, countdownClock: newClockModel});
 		return {ctor: '_Tuple2', _0: model_, _1: batchedCmds};
 	});
 var _user$project$Main$update = F2(
 	function (message, model) {
-		var _p6 = message;
-		switch (_p6.ctor) {
+		var _p2 = message;
+		switch (_p2.ctor) {
 			case 'Focus':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{inFocus: _p6._0}),
+						{inFocus: _p2._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'KeyDown':
-				var _p7 = _p6._0;
-				if (_p7 === 13) {
-					var _p8 = model.inFocus;
-					if (_p8.ctor === 'TheClock') {
-						var _p9 = A2(_user$project$Clock$update, _user$project$Clock$EnterPress, model.countdownClock);
-						var newClockModel = _p9._0;
-						var clockCmds = _p9._1;
+				var _p3 = _p2._0;
+				if (_p3 === 13) {
+					var _p4 = model.inFocus;
+					if (_p4.ctor === 'TheClock') {
+						var _p5 = A2(_user$project$Clock$update, _user$project$Clock$EnterPress, model.countdownClock);
+						var newClockModel = _p5._0;
+						var clockCmds = _p5._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
@@ -10967,9 +10995,9 @@ var _user$project$Main$update = F2(
 							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
 						};
 					} else {
-						var _p10 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$EnterPress, model.queue);
-						var newParticipantQueue = _p10._0;
-						var clockCmds = _p10._1;
+						var _p6 = A2(_user$project$ParticipantQueue$update, _user$project$ParticipantQueue$EnterPress, model.queue);
+						var newParticipantQueue = _p6._0;
+						var clockCmds = _p6._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
@@ -10982,11 +11010,11 @@ var _user$project$Main$update = F2(
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
 			case 'Clock':
-				var _p14 = _p6._0;
-				var _p11 = _p14;
-				switch (_p11.ctor) {
+				var _p10 = _p2._0;
+				var _p7 = _p10;
+				switch (_p7.ctor) {
 					case 'StartNext':
-						return A2(_user$project$Main$updateClockWithQueueRoation, _p14, model);
+						return A2(_user$project$Main$updateClockWithQueueRoation, _p10, model);
 					case 'GotFocus':
 						return {
 							ctor: '_Tuple2',
@@ -10996,38 +11024,44 @@ var _user$project$Main$update = F2(
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 					case 'Tick':
-						return A2(_user$project$Main$whoToTick, _p14, model);
-					default:
-						var _p12 = A2(_user$project$CooldownClock$update, _p14, model.cooldownClock);
-						var newCooldownClockModel = _p12._0;
-						var cooldownClockCmd = _p12._1;
-						var _p13 = A2(_user$project$Clock$update, _p14, model.countdownClock);
-						var newClockModel = _p13._0;
-						var clockCmds = _p13._1;
+						var _p8 = A2(_user$project$Clock$update, _p10, model.countdownClock);
+						var newState = _p8._0;
+						var newCmd = _p8._1;
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								model,
-								{countdownClock: newClockModel, cooldownClock: newCooldownClockModel}),
+								{countdownClock: newState}),
+							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, newCmd)
+						};
+					default:
+						var _p9 = A2(_user$project$Clock$update, _p10, model.countdownClock);
+						var newClockModel = _p9._0;
+						var clockCmds = _p9._1;
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{countdownClock: newClockModel}),
 							_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Clock, clockCmds)
 						};
 				}
 			default:
-				var _p18 = _p6._0;
-				var _p15 = A2(_user$project$ParticipantQueue$update, _p18, model.queue);
-				var newQueueState = _p15._0;
-				var queueCmds = _p15._1;
-				var _p16 = {
+				var _p14 = _p2._0;
+				var _p11 = A2(_user$project$ParticipantQueue$update, _p14, model.queue);
+				var newQueueState = _p11._0;
+				var queueCmds = _p11._1;
+				var _p12 = {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{queue: newQueueState}),
 					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$Queue, queueCmds)
 				};
-				var newModel = _p16._0;
-				var cmd = _p16._1;
-				var _p17 = _p18;
-				if (_p17.ctor === 'GotFocus') {
+				var newModel = _p12._0;
+				var cmd = _p12._1;
+				var _p13 = _p14;
+				if (_p13.ctor === 'GotFocus') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
@@ -11056,15 +11090,8 @@ var _user$project$Main$subscriptions = function (model) {
 					_user$project$ParticipantQueue$subscriptions(model.queue)),
 				_1: {
 					ctor: '::',
-					_0: A2(
-						_elm_lang$core$Platform_Sub$map,
-						_user$project$Main$Clock,
-						_user$project$CooldownClock$subscriptions(model.cooldownClock)),
-					_1: {
-						ctor: '::',
-						_0: _user$project$Main$keyStrokesDispatcher,
-						_1: {ctor: '[]'}
-					}
+					_0: _user$project$Main$keyStrokesDispatcher,
+					_1: {ctor: '[]'}
 				}
 			}
 		});
@@ -11081,13 +11108,18 @@ var _user$project$Main$view = function (model) {
 			ctor: '::',
 			_0: A2(
 				_elm_lang$html$Html$div,
-				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Events$onClick(
+						_user$project$Main$Focus(_user$project$Main$TheClock)),
+					_1: {ctor: '[]'}
+				},
 				{
 					ctor: '::',
 					_0: A2(
 						_elm_lang$html$Html$map,
 						_user$project$Main$Clock,
-						_user$project$CooldownClock$view(model.cooldownClock)),
+						_user$project$Clock$view(model.countdownClock)),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -11096,47 +11128,28 @@ var _user$project$Main$view = function (model) {
 					_elm_lang$html$Html$div,
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Events$onClick(
-							_user$project$Main$Focus(_user$project$Main$TheClock)),
-						_1: {ctor: '[]'}
+						_0: _elm_lang$html$Html_Attributes$id('queue'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(
+								_user$project$Main$Focus(_user$project$Main$TheQueue)),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onFocus(
+									_user$project$Main$Focus(_user$project$Main$TheQueue)),
+								_1: {ctor: '[]'}
+							}
+						}
 					},
 					{
 						ctor: '::',
 						_0: A2(
 							_elm_lang$html$Html$map,
-							_user$project$Main$Clock,
-							_user$project$Clock$view(model.countdownClock)),
+							_user$project$Main$Queue,
+							_user$project$ParticipantQueue$view(model.queue)),
 						_1: {ctor: '[]'}
 					}),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$div,
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html_Attributes$id('queue'),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$html$Html_Events$onClick(
-									_user$project$Main$Focus(_user$project$Main$TheQueue)),
-								_1: {
-									ctor: '::',
-									_0: _elm_lang$html$Html_Events$onFocus(
-										_user$project$Main$Focus(_user$project$Main$TheQueue)),
-									_1: {ctor: '[]'}
-								}
-							}
-						},
-						{
-							ctor: '::',
-							_0: A2(
-								_elm_lang$html$Html$map,
-								_user$project$Main$Queue,
-								_user$project$ParticipantQueue$view(model.queue)),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				}
+				_1: {ctor: '[]'}
 			}
 		});
 };

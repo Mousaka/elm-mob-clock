@@ -181,7 +181,7 @@ update msg model =
 finish model =
     case model of
         Running m ->
-            ( Idle { duration = m.duration, clockState = Finished, timeLeft = m.timeLeft }, Cmd.none )
+            ( Idle { duration = m.duration, clockState = Finished, timeLeft = m.timeLeft }, alarm () )
 
         _ ->
             ( model, Cmd.none )
@@ -372,7 +372,7 @@ view model =
 getTime model =
     case model of
         Idle m ->
-            m.timeLeft
+            m.duration
 
         Paused m ->
             m.timeLeft
