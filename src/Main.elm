@@ -1,7 +1,6 @@
 module Main exposing (..)
 
 import Clock exposing (..)
-import CooldownClock exposing (..)
 import Html exposing (Html, button, div, program, text)
 import Html.Attributes exposing (id)
 import Html.Events exposing (onClick, onFocus)
@@ -26,7 +25,6 @@ main =
 
 type alias Model =
     { countdownClock : Clock.Model
-    , cooldownClock : CooldownClock.Model
     , queue : ParticipantQueue.Model
     , inFocus : Focused
     }
@@ -40,7 +38,6 @@ type Focused
 init : ( Model, Cmd Msg )
 init =
     ( { countdownClock = Clock.init
-      , cooldownClock = CooldownClock.init
       , queue = ParticipantQueue.init
       , inFocus = TheClock
       }
@@ -95,19 +92,19 @@ update message model =
                     ( { model | inFocus = TheClock }, Cmd.none )
 
                 Tick _ ->
-                    whoToTick msg model
+                    let
+                        ( newState, newCmd ) =
+                            Clock.update msg model.countdownClock
+                    in
+                    ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
 
                 _ ->
                     let
                         ( newClockModel, clockCmds ) =
                             Clock.update msg model.countdownClock
-
-                        ( newCooldownClockModel, cooldownClockCmd ) =
-                            CooldownClock.update msg model.cooldownClock
                     in
                     ( { model
                         | countdownClock = newClockModel
-                        , cooldownClock = newCooldownClockModel
                       }
                     , Cmd.map Clock clockCmds
                     )
@@ -128,30 +125,6 @@ update message model =
                     ( newModel, cmd )
 
 
-whoToTick : Clock.Msg -> Model -> ( Model, Cmd Msg )
-whoToTick msg model =
-    if model.countdownClock.clockState == Running then
-        let
-            ( newState, newCmd ) =
-                Clock.update msg model.countdownClock
-        in
-        ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
-    else
-        case model.cooldownClock of
-            Active m ->
-                if m.clockState == Running then
-                    let
-                        ( newState, newCmd ) =
-                            CooldownClock.update msg model.cooldownClock
-                    in
-                    ( { model | cooldownClock = newState }, Cmd.map Clock newCmd )
-                else
-                    ( model, Cmd.none )
-
-            Deactivated ->
-                ( model, Cmd.none )
-
-
 updateClockWithQueueRoation : Clock.Msg -> Model -> ( Model, Cmd Msg )
 updateClockWithQueueRoation msg model =
     let
@@ -161,26 +134,19 @@ updateClockWithQueueRoation msg model =
         ( newClockModel, clockCmd ) =
             Clock.update msg model.countdownClock
 
-        ( newCooldownClockModel, cooldownClockCmd ) =
-            CooldownClock.update msg model.cooldownClock
-
         mappedQueueCmd =
             Cmd.map Queue queuecmd
 
         mappedClockCmd =
             Cmd.map Clock clockCmd
 
-        mappedCooldownClockCmd =
-            Cmd.map Clock cooldownClockCmd
-
         batchedCmds =
-            Cmd.batch [ mappedQueueCmd, mappedClockCmd, mappedCooldownClockCmd ]
+            Cmd.batch [ mappedQueueCmd, mappedClockCmd ]
 
         model_ =
             { model
                 | queue = queueModel
                 , countdownClock = newClockModel
-                , cooldownClock = newCooldownClockModel
             }
     in
     ( model_, batchedCmds )
@@ -195,7 +161,6 @@ subscriptions model =
     Sub.batch
         [ Sub.map Clock (Clock.subscriptions model.countdownClock)
         , Sub.map Queue (ParticipantQueue.subscriptions model.queue)
-        , Sub.map Clock (CooldownClock.subscriptions model.cooldownClock)
         , keyStrokesDispatcher
         ]
 
@@ -213,7 +178,6 @@ view : Model -> Html Msg
 view model =
     div
         [ flexMiddle ]
-        [ div [] [ Html.map Clock (CooldownClock.view model.cooldownClock) ]
-        , div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
+        [ div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
         , div [ id "queue", onClick (Focus TheQueue), onFocus (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
         ]

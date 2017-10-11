@@ -1,4 +1,4 @@
-port module Clock exposing (ClockState(..), Model, Msg(EnterPress, Finish, GotFocus, Start, StartNext, Tick), displayTime, init, inputOrDisplayTime, subscriptions, update, view)
+port module Clock exposing (ClockState(..), Model, Msg(EnterPress, Finish, GotFocus, Start, StartNext, Tick, TimeToStart), displayTime, init, inputOrDisplayTime, subscriptions, update, view)
 
 import Dom exposing (..)
 import Html exposing (Attribute, Html, button, div, input, program)
@@ -29,24 +29,45 @@ main =
 
 type ClockState
     = Stopped
-    | Running
-    | Paused
     | Finished
 
 
-type alias Model =
-    { time : Int
-    , resetTime : Int
-    , clockState : ClockState
-    }
+type Model
+    = Idle IdleClock
+    | Running RunningClock
+    | Paused PausedClock
+
+
+type alias Durationed a =
+    { a | duration : Int, timeLeft : Int }
+
+
+type alias IdleClock =
+    Durationed
+        { clockState : ClockState
+        }
+
+
+type alias RunningClock =
+    Durationed
+        { startTime : Time
+        }
+
+
+type alias PausedClock =
+    Durationed
+        { originalStart : Time
+        , pauseStart : Time
+        }
 
 
 init : Model
 init =
-    { time = 60 * 10
-    , resetTime = 60 * 10
-    , clockState = Stopped
-    }
+    Idle
+        { duration = 60 * 10
+        , clockState = Stopped
+        , timeLeft = 60 * 10
+        }
 
 
 
@@ -55,11 +76,14 @@ init =
 
 type Msg
     = Tick Time
-    | Start
+    | Start Time
+    | TimeToStart
+    | TimeToPause
+    | TimeToUnpause
     | StartNext
     | Reset
-    | Pause
-    | Unpause
+    | Pause Time
+    | Unpause Time
     | Finish
     | GotFocus
     | SoundAlarm
@@ -80,64 +104,188 @@ finishCmd =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Tick _ ->
-            case model.time of
-                1 ->
-                    update SoundAlarm { model | time = model.time - 1 }
+        Tick time ->
+            timeTick model time
 
-                0 ->
-                    ( model, Task.perform (\_ -> Finish) finishCmd )
-
-                _ ->
-                    ( { model | time = model.time - 1 }, Cmd.none )
-
-        Start ->
-            ( { model | clockState = Running }, Dom.focus "clock" |> Task.attempt FocusResult )
+        TimeToStart ->
+            timeToStart model
 
         StartNext ->
-            ( { model | clockState = Stopped, time = model.resetTime }, msgAsCmd Start )
+            let
+                ( m, c ) =
+                    reset model
+
+                ( m2, c2 ) =
+                    timeToStart m
+            in
+            ( m2, Cmd.batch [ c, c2 ] )
+
+        Start time ->
+            case model of
+                Idle m ->
+                    ( Running { startTime = time, duration = m.duration, timeLeft = m.timeLeft }, Dom.focus "clock" |> Task.attempt FocusResult )
+
+                Running _ ->
+                    ( model, Cmd.none )
+
+                Paused _ ->
+                    ( model, Cmd.none )
 
         Reset ->
-            ( { model | clockState = Stopped, time = model.resetTime }, Dom.focus "clock" |> Task.attempt FocusResult )
+            reset model
 
-        Pause ->
-            ( { model | clockState = Paused }, Dom.focus "clock" |> Task.attempt FocusResult )
+        TimeToPause ->
+            timeToPause model
 
-        Unpause ->
-            ( { model | clockState = Running }, Dom.focus "clock" |> Task.attempt FocusResult )
+        Pause time ->
+            pause model time
+
+        TimeToUnpause ->
+            ( model, Cmd.batch [ Dom.focus "clock" |> Task.attempt FocusResult, Task.perform Unpause Time.now ] )
+
+        Unpause time ->
+            unpause model time
 
         Finish ->
-            ( { model | clockState = Finished }, Cmd.none )
+            finish model
 
         SoundAlarm ->
             ( model, alarm () )
 
         SetTimer newTime ->
-            case toMinSec newTime of
-                Just timeValue ->
-                    ( { model | resetTime = timeValue, time = timeValue }, Cmd.none )
-
-                Nothing ->
-                    ( model, Cmd.none )
+            setTimer model newTime
 
         EnterPress ->
-            case model.clockState of
-                Running ->
-                    update Pause model
+            case model of
+                Running _ ->
+                    timeToPause model
 
-                Finished ->
-                    update StartNext model
+                Idle m ->
+                    case m.clockState of
+                        Finished ->
+                            timeToStart model
 
-                Stopped ->
-                    update Start model
+                        Stopped ->
+                            timeToStart model
 
-                Paused ->
-                    update Start model
+                Paused _ ->
+                    timeToStart model
 
         FocusResult result ->
             ( model, Cmd.none )
 
         GotFocus ->
+            ( model, Cmd.none )
+
+
+finish model =
+    case model of
+        Running m ->
+            ( Idle { duration = m.duration, clockState = Finished, timeLeft = m.timeLeft }, alarm () )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+unpause model time =
+    case model of
+        Paused m ->
+            ( Running { duration = m.duration, startTime = m.originalStart + (m.pauseStart - m.originalStart), timeLeft = m.timeLeft }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+timeToPause model =
+    case model of
+        Idle _ ->
+            ( model, Cmd.none )
+
+        Paused _ ->
+            ( model, Cmd.none )
+
+        Running m ->
+            ( model, Cmd.batch [ Dom.focus "clock" |> Task.attempt FocusResult, Task.perform Pause Time.now ] )
+
+
+pause : Model -> Time -> ( Model, Cmd Msg )
+pause model time =
+    case model of
+        Idle _ ->
+            ( model, Cmd.none )
+
+        Paused _ ->
+            ( model, Cmd.none )
+
+        Running m ->
+            ( Paused { duration = m.duration, pauseStart = time, originalStart = m.startTime, timeLeft = m.timeLeft }, Cmd.none )
+
+
+timeTick : Model -> Time -> ( Model, Cmd Msg )
+timeTick model time =
+    case model of
+        Running m ->
+            case (m.startTime + Basics.toFloat (m.duration * 1000)) > time of
+                True ->
+                    ( Running { m | timeLeft = round (((Basics.toFloat m.duration * 1000) - (time - m.startTime)) / 1000) }, Cmd.none )
+
+                False ->
+                    finish model
+
+        Idle m ->
+            ( model, Cmd.none )
+
+        Paused m ->
+            ( model, Cmd.none )
+
+
+getDuration : Model -> Int
+getDuration model =
+    case model of
+        Running m ->
+            m.duration
+
+        Idle m ->
+            m.duration
+
+        Paused m ->
+            m.duration
+
+
+reset : Model -> ( Model, Cmd Msg )
+reset model =
+    case model of
+        Paused m ->
+            ( Idle { clockState = Stopped, duration = m.duration, timeLeft = m.duration }, Dom.focus "clock" |> Task.attempt FocusResult )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+timeToStart : Model -> ( Model, Cmd Msg )
+timeToStart model =
+    case model of
+        Running m ->
+            ( model, Cmd.none )
+
+        _ ->
+            ( model, Task.perform Start Time.now )
+
+
+setTimer model newTime =
+    case toMinSec newTime of
+        Just timeValue ->
+            case model of
+                Idle m ->
+                    ( Idle { m | duration = timeValue }, Cmd.none )
+
+                Paused m ->
+                    ( Paused { m | duration = timeValue }, Cmd.none )
+
+                Running _ ->
+                    ( model, Cmd.none )
+
+        Nothing ->
             ( model, Cmd.none )
 
 
@@ -147,8 +295,11 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.clockState of
-        Running ->
+    case model of
+        Running _ ->
+            Time.every second Tick
+
+        Paused _ ->
             Time.every second Tick
 
         _ ->
@@ -199,74 +350,98 @@ view : Model -> Html Msg
 view model =
     let
         message =
-            statusText model.clockState
+            statusText model
 
         timeField =
-            inputOrDisplayTime model.clockState <| displayTime model.time
+            inputOrDisplayTime model <| displayTime <| getTime model
 
         startPauseResumeButton =
-            startPauseResumeB model.clockState
+            startPauseResumeB model
 
         resetButton =
-            resetB model.clockState
+            resetB model
     in
     div [ Html.Attributes.id "clock" ]
-        [ div [ flexMiddle ] [ clock model.time ]
+        [ div [ flexMiddle ] [ model |> getTime |> clock ]
         , div [ flexMiddle ] [ text message ]
         , div [ flexMiddle ] [ timeField ]
         , div [ flexMiddle ] [ startPauseResumeButton, resetButton ]
         ]
 
 
-statusText : ClockState -> String
-statusText clockState =
-    case clockState of
-        Finished ->
-            "Time is up!"
+getTime model =
+    case model of
+        Idle m ->
+            m.duration
+
+        Paused m ->
+            m.timeLeft
+
+        Running m ->
+            m.timeLeft
+
+
+statusText : Model -> String
+statusText model =
+    case model of
+        Idle m ->
+            case m.clockState of
+                Finished ->
+                    "Time is up!"
+
+                _ ->
+                    ""
 
         _ ->
             ""
 
 
-resetB : ClockState -> Html Msg
-resetB clockState =
-    case clockState of
-        Paused ->
+resetB : Model -> Html Msg
+resetB model =
+    case model of
+        Idle model ->
+            case model.clockState of
+                Stopped ->
+                    button [ onFocus GotFocus, onClick Reset, hidden True, myButton ] [ text "Reset" ]
+
+                Finished ->
+                    button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick StartNext, myButton ] [ text "Start next" ]
+
+        Paused _ ->
             button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Reset, myButton ] [ text "Reset" ]
 
-        Finished ->
-            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick StartNext, myButton ] [ text "Start next" ]
-
-        _ ->
+        Running _ ->
             button [ onFocus GotFocus, onClick Reset, hidden True, myButton ] [ text "Reset" ]
 
 
-startPauseResumeB : ClockState -> Html Msg
-startPauseResumeB clockState =
-    case clockState of
-        Paused ->
-            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Unpause, myButton ]
+startPauseResumeB : Model -> Html Msg
+startPauseResumeB model =
+    case model of
+        Paused _ ->
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick TimeToUnpause, myButton ]
                 [ text "Resume" ]
 
-        Running ->
-            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Pause, myButton ]
+        Running _ ->
+            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick TimeToPause, myButton ]
                 [ text "Pause" ]
 
-        Finished ->
-            button [ hidden True, myButton ] []
+        Idle model ->
+            case model.clockState of
+                Finished ->
+                    button [ hidden True, myButton ] []
 
-        _ ->
-            button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick Start, myButton ]
-                [ text "Start" ]
+                Stopped ->
+                    button [ onFocus GotFocus, Html.Attributes.id "startButton", onClick TimeToStart, myButton ]
+                        [ text "Start" ]
 
 
-inputOrDisplayTime : ClockState -> (String -> Html Msg)
-inputOrDisplayTime clockState =
-    case clockState of
-        Paused ->
+inputOrDisplayTime : Model -> (String -> Html Msg)
+inputOrDisplayTime model =
+    case model of
+        Paused _ ->
             displayTimer
 
-        Running ->
+        Running _ ->
             displayTimer
 
         _ ->
