@@ -1,3 +1,4 @@
+# OLD VERSION ONLY WORKING IN OLDER BROWSERS
 # elm-mob-clock
 A timer that counts down to zero and makes a ring tone and then rotates a queue of given participants.
 Great for mob programming!
