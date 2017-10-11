@@ -36,6 +36,10 @@ const soundTheAlarm = function(){
     });
 };
 
+const setTitle = title => document.title = title
+
+app.ports.setTitle.subscribe(setTitle)
+
 app.ports.alarm.subscribe(() => {
   soundTheAlarm();
 });

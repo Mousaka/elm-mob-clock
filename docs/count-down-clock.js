@@ -9768,6 +9768,11 @@ var _user$project$Clock$alarm = _elm_lang$core$Native_Platform.outgoingPort(
 	function (v) {
 		return null;
 	});
+var _user$project$Clock$setTitle = _elm_lang$core$Native_Platform.outgoingPort(
+	'setTitle',
+	function (v) {
+		return v;
+	});
 var _user$project$Clock$Finished = {ctor: 'Finished'};
 var _user$project$Clock$Stopped = {ctor: 'Stopped'};
 var _user$project$Clock$Paused = function (a) {
@@ -9839,16 +9844,16 @@ var _user$project$Clock$timeTick = F2(
 					_p14.startTime + _elm_lang$core$Basics$toFloat(_p14.duration * 1000),
 					time) > 0;
 				if (_p13 === true) {
+					var timeLeft = _elm_lang$core$Basics$round(
+						((_elm_lang$core$Basics$toFloat(_p14.duration) * 1000) - (time - _p14.startTime)) / 1000);
 					return {
 						ctor: '_Tuple2',
 						_0: _user$project$Clock$Running(
 							_elm_lang$core$Native_Utils.update(
 								_p14,
-								{
-									timeLeft: _elm_lang$core$Basics$round(
-										((_elm_lang$core$Basics$toFloat(_p14.duration) * 1000) - (time - _p14.startTime)) / 1000)
-								})),
-						_1: _elm_lang$core$Platform_Cmd$none
+								{timeLeft: timeLeft})),
+						_1: _user$project$Clock$setTitle(
+							_user$project$Clock$displayTime(timeLeft))
 					};
 				} else {
 					return _user$project$Clock$finish(model);

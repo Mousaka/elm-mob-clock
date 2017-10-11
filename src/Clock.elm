@@ -227,7 +227,11 @@ timeTick model time =
         Running m ->
             case (m.startTime + Basics.toFloat (m.duration * 1000)) > time of
                 True ->
-                    ( Running { m | timeLeft = round (((Basics.toFloat m.duration * 1000) - (time - m.startTime)) / 1000) }, Cmd.none )
+                    let
+                        timeLeft =
+                            round (((Basics.toFloat m.duration * 1000) - (time - m.startTime)) / 1000)
+                    in
+                    ( Running { m | timeLeft = timeLeft }, setTitle (displayTime timeLeft) )
 
                 False ->
                     finish model
@@ -311,6 +315,9 @@ subscriptions model =
 
 
 port alarm : () -> Cmd msg
+
+
+port setTitle : String -> Cmd msg
 
 
 
