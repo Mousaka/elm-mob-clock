@@ -1,4 +1,4 @@
-var elmDiv = document.getElementById('elm-app-lives-here');
+var elmDiv = document.getElementById('elm');
 var app = Elm.Main.embed(elmDiv);
 const alarmPromise = document.getElementById('alarm');
 var notificationsAllowed = false;
@@ -36,9 +36,7 @@ const soundTheAlarm = function(){
     });
 };
 
-const setTitle = title => document.title = title
 
-app.ports.setTitle.subscribe(setTitle)
 
 app.ports.alarm.subscribe(() => {
   soundTheAlarm();

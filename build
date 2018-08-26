@@ -1,2 +1,0 @@
-elm make src/Main.elm --output=docs/count-down-clock.js
-cp src/notifications.js docs/notifications.js

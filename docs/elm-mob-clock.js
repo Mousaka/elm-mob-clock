@@ -5565,7 +5565,7 @@ var author$project$Main$view = function (model) {
 		return {
 			body: _List_fromArray(
 				[body]),
-			title: 'Elm Mobb clock'
+			title: 'Elm Mob clock'
 		};
 	} else {
 		var rModel = model.a;

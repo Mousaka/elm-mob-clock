@@ -1,0 +1,26 @@
+{
+  "name": "elm-mob-clock",
+  "version": "1.0.0",
+  "description": "Timer for mob programming",
+  "main": "count-down-clock.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "elm": "^0.19.0-bugfix2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mousaka/elm-mob-clock.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mousaka/elm-mob-clock/issues"
+  },
+  "homepage": "https://github.com/Mousaka/elm-mob-clock#readme"
+}

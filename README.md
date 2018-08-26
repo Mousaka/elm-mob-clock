@@ -18,7 +18,7 @@ To build:
 
 * `npm install elm`
 * `elm-package install`
-* `elm make src/Main.elm --output=count-down-clock.js`
+* `elm make src/Main.elm --output=elm-mob-clock.js`
 
 last build step can be replaced with the following if you `chmod` build file first (unix)
 * `./build`

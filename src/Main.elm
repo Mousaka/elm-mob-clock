@@ -1,183 +1,166 @@
-module Main exposing (..)
+module Main exposing (main, view)
 
-import Clock exposing (..)
-import Html exposing (Html, button, div, program, text)
-import Html.Attributes exposing (id)
-import Html.Events exposing (onClick, onFocus)
+import Browser
+import Browser.Dom as Dom
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+import Html.Keyed as Keyed
+import Json.Decode
 import Keyboard
-import ParticipantQueue exposing (..)
-import Styling exposing (..)
+import Task
+import Time exposing (Posix, every)
 
 
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = subscriptions
-        }
+type alias RunningTime =
+    { started : Int, duration : Int, now : Int }
 
 
-
--- MODEL
-
-
-type alias Model =
-    { countdownClock : Clock.Model
-    , queue : ParticipantQueue.Model
-    , inFocus : Focused
-    }
+type alias StoppedTime =
+    { duration : Int, now : Int }
 
 
-type Focused
-    = TheClock
-    | TheQueue
+toRunning : Int -> StoppedTime -> RunningTime
+toRunning started stime =
+    { started = started, duration = stime.duration, now = stime.now }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { countdownClock = Clock.init
-      , queue = ParticipantQueue.init
-      , inFocus = TheClock
-      }
-    , Cmd.none
-    )
+toStopped : RunningTime -> StoppedTime
+toStopped rtime =
+    { duration = rtime.duration, now = rtime.now }
 
 
-
--- UPDATE
+type Model
+    = Stopped StoppedTime
+    | Running RunningTime
 
 
 type Msg
-    = Clock Clock.Msg
-    | Queue ParticipantQueue.Msg
-    | KeyDown Int
-    | Focus Focused
+    = Tick Posix
+    | Start
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update message model =
-    case message of
-        Focus what ->
-            ( { model | inFocus = what }, Cmd.none )
+emptyModel =
+    { duration = 10 * 60 * 1000, now = 0 }
 
-        KeyDown keyCode ->
-            case keyCode of
-                13 ->
-                    case model.inFocus of
-                        TheClock ->
-                            let
-                                ( newClockModel, clockCmds ) =
-                                    Clock.update Clock.EnterPress model.countdownClock
-                            in
-                            ( { model | countdownClock = newClockModel }, Cmd.map Clock clockCmds )
 
-                        TheQueue ->
-                            let
-                                ( newParticipantQueue, clockCmds ) =
-                                    ParticipantQueue.update ParticipantQueue.EnterPress model.queue
-                            in
-                            ( { model | queue = newParticipantQueue }, Cmd.map Queue clockCmds )
+init _ =
+    ( Stopped emptyModel, Cmd.none )
 
-                _ ->
+
+update msg model =
+    case msg of
+        Tick theTime ->
+            case model of
+                Running rModel ->
+                    case timeIsUp rModel of
+                        True ->
+                            ( Stopped
+                                ({ rModel | now = Time.posixToMillis theTime }
+                                    |> toStopped
+                                )
+                            , Cmd.none
+                            )
+
+                        False ->
+                            ( Running { rModel | now = Time.posixToMillis theTime }, Cmd.none )
+
+                Stopped sModel ->
+                    ( Stopped { sModel | now = Time.posixToMillis theTime }, Cmd.none )
+
+        Start ->
+            case model of
+                Stopped sModel ->
+                    ( Running (toRunning sModel.now sModel), Cmd.none )
+
+                Running rModel ->
                     ( model, Cmd.none )
 
-        Clock msg ->
-            case msg of
-                StartNext ->
-                    updateClockWithQueueRoation msg model
-
-                Clock.GotFocus ->
-                    ( { model | inFocus = TheClock }, Cmd.none )
-
-                Tick _ ->
-                    let
-                        ( newState, newCmd ) =
-                            Clock.update msg model.countdownClock
-                    in
-                    ( { model | countdownClock = newState }, Cmd.map Clock newCmd )
-
-                _ ->
-                    let
-                        ( newClockModel, clockCmds ) =
-                            Clock.update msg model.countdownClock
-                    in
-                    ( { model
-                        | countdownClock = newClockModel
-                      }
-                    , Cmd.map Clock clockCmds
-                    )
-
-        Queue msg ->
-            let
-                ( newQueueState, queueCmds ) =
-                    ParticipantQueue.update msg model.queue
-
-                ( newModel, cmd ) =
-                    ( { model | queue = newQueueState }, Cmd.map Queue queueCmds )
-            in
-            case msg of
-                ParticipantQueue.GotFocus ->
-                    ( { newModel | inFocus = TheQueue }, cmd )
-
-                _ ->
-                    ( newModel, cmd )
 
 
-updateClockWithQueueRoation : Clock.Msg -> Model -> ( Model, Cmd Msg )
-updateClockWithQueueRoation msg model =
+-- TIME Stuff
+
+
+timeIsUp : RunningTime -> Bool
+timeIsUp rtime =
+    rtime.now >= rtime.duration + rtime.started
+
+
+showTime timetrack =
     let
-        ( queueModel, queuecmd ) =
-            ParticipantQueue.update Next model.queue
-
-        ( newClockModel, clockCmd ) =
-            Clock.update msg model.countdownClock
-
-        mappedQueueCmd =
-            Cmd.map Queue queuecmd
-
-        mappedClockCmd =
-            Cmd.map Clock clockCmd
-
-        batchedCmds =
-            Cmd.batch [ mappedQueueCmd, mappedClockCmd ]
-
-        model_ =
-            { model
-                | queue = queueModel
-                , countdownClock = newClockModel
-            }
+        timeLeft tt =
+            tt.duration - (tt.now - tt.started)
     in
-    ( model_, batchedCmds )
+    timetrack |> timeLeft |> minutes |> seconds |> timeString
 
 
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ Sub.map Clock (Clock.subscriptions model.countdownClock)
-        , Sub.map Queue (ParticipantQueue.subscriptions model.queue)
-        , keyStrokesDispatcher
-        ]
+minutes : Int -> ( Int, Int )
+minutes time =
+    let
+        min =
+            time // (60 * 1000)
+    in
+    ( time - min * 60 * 1000, min )
 
 
-keyStrokesDispatcher : Sub Msg
-keyStrokesDispatcher =
-    Keyboard.downs KeyDown
+seconds : ( Int, Int ) -> ( Int, Int )
+seconds ( time, min ) =
+    ( min, time // 1000 )
+
+
+timeString : ( Int, Int ) -> String
+timeString ( min, sec ) =
+    let
+        pad =
+            Debug.toString >> String.padLeft 2 '0'
+    in
+    pad min ++ ":" ++ pad sec
 
 
 
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    div
-        [ flexMiddle ]
-        [ div [ onClick (Focus TheClock) ] [ Html.map Clock (Clock.view model.countdownClock) ]
-        , div [ id "queue", onClick (Focus TheQueue), onFocus (Focus TheQueue) ] [ Html.map Queue (ParticipantQueue.view model.queue) ]
-        ]
+    case model of
+        Stopped sModel ->
+            let
+                body =
+                    div [] [ text "Click to start session", button [ onClick Start ] [ text "Start" ] ]
+            in
+            { title = "Elm Mob clock", body = [ body ] }
+
+        Running rModel ->
+            let
+                body =
+                    div
+                        []
+                        [ text <| showTime rModel ]
+
+                title =
+                    showTime rModel
+            in
+            { title = title, body = [ body ] }
+
+
+
+-- SUB
+
+
+subscriptions model =
+    Time.every 1000 Tick
+
+
+
+-- MAIN
+
+
+main : Program Json.Decode.Value Model Msg
+main =
+    Browser.document
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }

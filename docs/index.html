@@ -7,11 +7,16 @@
   <audio id="alarm"
   src="old-fashioned-door-bell-daniel_simon.wav"
   preload="auto"></audio>
-  <script type="text/javascript" src="count-down-clock.js"></script>
+  <script type="text/javascript" src="elm-mob-clock.js"></script>
 </head>
 
 <body>
-  <div id="elm-app-lives-here"></div>
-  <script type="text/javascript" src="notifications.js"></script>  
+  <div id="elm"></div>
+  <script type="text/javascript" src="notifications.js"></script>
+  <script>
+    var app = Elm.Main.init({
+      node: document.getElementById('elm')
+    });
+    </script>
 </body>
 </html>
